@@ -30,8 +30,24 @@
       <el-table-column label="车位" prop="parkName"></el-table-column>
       <el-table-column label="车位类型" prop="parkType">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.parkType == '0'" type="danger" size="small">地上</el-tag>
-          <el-tag v-if="scope.row.parkType == '1'" type="success" size="small">地下</el-tag>
+          <el-tag
+            v-if="parkTypeMap[scope.row.parkType]"
+            :type="parkTypeMap[scope.row.parkType].tag"
+            size="small"
+          >
+            {{ parkTypeMap[scope.row.parkType].label }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="车辆类别" prop="vehicleType">
+        <template slot-scope="scope">
+          <el-tag
+            v-if="vehicleTypeMap[scope.row.vehicleType]"
+            :type="vehicleTypeMap[scope.row.vehicleType].tag"
+            size="small"
+          >
+            {{ vehicleTypeMap[scope.row.vehicleType].label }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="所属月份" prop="payParkMonth"></el-table-column>
@@ -105,7 +121,19 @@ import {getBuildApi} from "@/api/houseList";
 export default {
   components: { SysDialog },
   data() {
+    const parkTypeMap = {
+      "0": { label: "地上", tag: "warning" },
+      "1": { label: "地下", tag: "success" },
+    };
+    const vehicleTypeMap = {
+      "0": { label: "小汽车", tag: "success" },
+      "1": { label: "货车", tag: "warning" },
+      "2": { label: "巴士", tag: "danger" },
+      "3": { label: "摩托车", tag: "info" },
+    };
     return {
+      parkTypeMap,
+      vehicleTypeMap,
       //表格高度
       tableHeight: 0,
       //车辆列表

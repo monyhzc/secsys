@@ -14,7 +14,18 @@
       <el-form-item label="车位类型">
         <el-select v-model="parms.parkType">
           <el-option
-            v-for="item in typeOptions"
+            v-for="item in parkTypeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          >
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="车辆类别">
+        <el-select v-model="parms.vehicleType">
+          <el-option
+            v-for="item in vehicleTypeOptions"
             :key="item.value"
             :label="item.label"
             :value="item.value"
@@ -46,12 +57,24 @@
       <el-table-column prop="parkName" label="车位名称"></el-table-column>
       <el-table-column prop="parkType" label="车位类型">
         <template slot-scope="scope">
-          <el-tag v-if="scope.row.parkType == '0'" type="danger" size="small"
-            >地上</el-tag
+          <el-tag
+            v-if="parkTypeMap[scope.row.parkType]"
+            :type="parkTypeMap[scope.row.parkType].tag"
+            size="small"
           >
-          <el-tag v-if="scope.row.parkType == '1'" type="success" size="small"
-            >地下</el-tag
+            {{ parkTypeMap[scope.row.parkType].label }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="vehicleType" label="车辆类别">
+        <template slot-scope="scope">
+          <el-tag
+            v-if="vehicleTypeMap[scope.row.vehicleType]"
+            :type="vehicleTypeMap[scope.row.vehicleType].tag"
+            size="small"
           >
+            {{ vehicleTypeMap[scope.row.vehicleType].label }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="parkName" label="使用状态">
@@ -112,7 +135,18 @@
           <el-form-item prop="parkType" label="车位类型">
             <el-select v-model="addModel.parkType">
               <el-option
-                v-for="item in options"
+                v-for="item in parkTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              >
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item prop="vehicleType" label="车辆类别">
+            <el-select v-model="addModel.vehicleType">
+              <el-option
+                v-for="item in vehicleTypeOptions"
                 :key="item.value"
                 :label="item.label"
                 :value="item.value"
@@ -147,7 +181,50 @@ export default {
   //注册组件
   components: { SysDialog },
   data() {
+    const parkTypeOptions = [
+      {
+        value: "0",
+        label: "地上",
+        tag: "warning",
+      },
+      {
+        value: "1",
+        label: "地下",
+        tag: "success",
+      },
+    ];
+    const vehicleTypeOptions = [
+      {
+        value: "0",
+        label: "小汽车",
+        tag: "success",
+      },
+      {
+        value: "1",
+        label: "货车",
+        tag: "warning",
+      },
+      {
+        value: "2",
+        label: "巴士",
+        tag: "danger",
+      },
+      {
+        value: "3",
+        label: "摩托车",
+        tag: "info",
+      },
+    ];
+    const toMap = (list) =>
+      list.reduce((acc, cur) => {
+        acc[cur.value] = cur;
+        return acc;
+      }, {});
     return {
+      parkTypeOptions,
+      vehicleTypeOptions,
+      parkTypeMap: toMap(parkTypeOptions),
+      vehicleTypeMap: toMap(vehicleTypeOptions),
       //车位使用状态
       useOptions: [
         {
@@ -157,17 +234,6 @@ export default {
         {
           value: "1",
           label: "已使用",
-        },
-      ],
-      //车位类型
-      options: [
-        {
-          value: "0",
-          label: "地上",
-        },
-        {
-          value: "1",
-          label: "地下",
         },
       ],
       //表单验证
@@ -186,6 +252,13 @@ export default {
             message: "请选择车位类型",
           },
         ],
+        vehicleType: [
+          {
+            trigger: "change",
+            required: true,
+            message: "请选择车辆类别",
+          },
+        ],
         parkStatus: [
           {
             trigger: "change",
@@ -199,6 +272,7 @@ export default {
         editType: "", //0 新增 1：编辑
         parkId: "",
         parkType: "",
+        vehicleType: "",
         parkName: "",
         parkStatus: "",
         parkNum: "",
@@ -212,26 +286,6 @@ export default {
       },
       //表格高度
       tableHeight: 0,
-      statusOptions: [
-        {
-          value: "0",
-          label: "未使用",
-        },
-        {
-          value: "1",
-          label: "已使用",
-        },
-      ],
-      typeOptions: [
-        {
-          value: "0",
-          label: "地上",
-        },
-        {
-          value: "1",
-          label: "地下",
-        },
-      ],
       //表格数据
       tableList: [],
       //查询参数
@@ -241,6 +295,7 @@ export default {
         parkName: "",
         parkStatus: "",
         parkType: "",
+        vehicleType: "",
         total: 0,
       },
     };
@@ -326,6 +381,7 @@ export default {
       this.parms.parkName = '';
       this.parms.parkStatus = '';
       this.parms.parkType = '';
+      this.parms.vehicleType = '';
       this.getList();
     },
     // 搜索按钮

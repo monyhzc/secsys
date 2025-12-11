@@ -14,6 +14,8 @@ public class ParkList implements Serializable {
     private Long parkId;
     //车位类型 0：地上 1：地下
     private String parkType;
+    //车辆类别 0:小汽车 1:货车 2:巴士 3:摩托车
+    private String vehicleType;
     //车位名称
     private String parkName;
     //使用状态 0：未使用 1：已使用

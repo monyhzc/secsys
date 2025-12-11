@@ -26,6 +26,9 @@ public class ParkListServiceImpl extends ServiceImpl<ParkListMapper, ParkList> i
         if(StringUtils.isNotEmpty(parkListParm.getParkType())){
             query.lambda().eq(ParkList::getParkType,parkListParm.getParkType());
         }
+        if(StringUtils.isNotEmpty(parkListParm.getVehicleType())){
+            query.lambda().eq(ParkList::getVehicleType,parkListParm.getVehicleType());
+        }
         query.lambda().orderByAsc(ParkList::getParkNum);
         //构造分页对象
         IPage<ParkList> page = new Page<>();

@@ -37,4 +37,6 @@ public class FeePark implements Serializable {
     private String parkName;
     @TableField(exist = false)
     private String parkType;
+    @TableField(exist = false)
+    private String vehicleType;
 }

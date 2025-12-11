@@ -180,8 +180,24 @@
             <el-table-column align="center" prop="parkName" label="车位名称"></el-table-column>
             <el-table-column align="center" prop="parkType" label="车位类型">
               <template slot-scope="scope">
-                <el-tag v-if="scope.row.parkType == '0'" type="danger" size="small">地上</el-tag>
-                <el-tag v-if="scope.row.parkType == '1'" type="success" size="small">地下</el-tag>
+                <el-tag
+                  v-if="parkTypeMap[scope.row.parkType]"
+                  :type="parkTypeMap[scope.row.parkType].tag"
+                  size="small"
+                >
+                  {{ parkTypeMap[scope.row.parkType].label }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column align="center" prop="vehicleType" label="车辆类别">
+              <template slot-scope="scope">
+                <el-tag
+                  v-if="vehicleTypeMap[scope.row.vehicleType]"
+                  :type="vehicleTypeMap[scope.row.vehicleType].tag"
+                  size="small"
+                >
+                  {{ vehicleTypeMap[scope.row.vehicleType].label }}
+                </el-tag>
               </template>
             </el-table-column>
             <el-table-column align="center" prop="parkName" label="使用状态">
@@ -222,7 +238,19 @@ import {
 export default {
   components: { SysDialog },
   data() {
+    const parkTypeMap = {
+      "0": { label: "地上", tag: "warning" },
+      "1": { label: "地下", tag: "success" },
+    };
+    const vehicleTypeMap = {
+      "0": { label: "小汽车", tag: "success" },
+      "1": { label: "货车", tag: "warning" },
+      "2": { label: "巴士", tag: "danger" },
+      "3": { label: "摩托车", tag: "info" },
+    };
     return {
+      parkTypeMap,
+      vehicleTypeMap,
       //绑定车位列表高度
       parkTableHeight: 0,
       //绑定车位参数
@@ -246,6 +274,7 @@ export default {
         parkName: "",
         parkStatus: "0", //0未使用 1 已使用
         parkType: "",
+        vehicleType: "",
         total: 0,
       },
       //绑定房屋列表高度
@@ -546,6 +575,8 @@ export default {
     //绑定车位列表重置事件
     parkResetBtn() {
       this.parkParms.parkName = "";
+      this.parkParms.parkType = "";
+      this.parkParms.vehicleType = "";
       //获取车位列表
       this.getAssignParkList();
     },

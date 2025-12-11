@@ -4,7 +4,7 @@
 
 <mapper namespace="com.itmk.web.fee_park.mapper.FeeParkMapper">
     <select id="getList" resultType="com.itmk.web.fee_park.entity.FeePark">
-        select lu.login_name,lu.phone,fp.*,pl.park_name,pl.park_type from fee_park as fp
+        select lu.login_name,lu.phone,fp.*,pl.park_name,pl.park_type,pl.vehicle_type from fee_park as fp
         left join live_user as lu on lu.user_id = fp.user_id
         left join parking_list pl on pl.park_id = fp.park_id
         where 1=1

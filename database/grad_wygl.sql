@@ -686,6 +686,7 @@ DROP TABLE IF EXISTS `parking_list`;
 CREATE TABLE `parking_list`  (
   `park_id` int NOT NULL AUTO_INCREMENT COMMENT '车位id',
   `park_type` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '车位类型 0:地上 1：地下',
+  `vehicle_type` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '车辆类别 0:小汽车 1:货车 2:巴士 3:摩托车',
   `park_name` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '车位名称',
   `park_status` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '车位使用状态 0：未使用 1：已使用',
   `park_num` int NULL DEFAULT NULL COMMENT '车位序号',
@@ -695,56 +696,56 @@ CREATE TABLE `parking_list`  (
 -- ----------------------------
 -- Records of parking_list
 -- ----------------------------
-INSERT INTO `parking_list` VALUES (1, '0', 'A01', '0', NULL);
-INSERT INTO `parking_list` VALUES (2, '0', 'A02', '1', NULL);
-INSERT INTO `parking_list` VALUES (3, '0', 'A03', '1', NULL);
-INSERT INTO `parking_list` VALUES (4, '0', 'A04', '1', NULL);
-INSERT INTO `parking_list` VALUES (5, '0', 'A05', '1', NULL);
-INSERT INTO `parking_list` VALUES (6, '0', 'A06', '1', NULL);
-INSERT INTO `parking_list` VALUES (7, '0', 'A07', '1', NULL);
-INSERT INTO `parking_list` VALUES (8, '0', 'A08', '1', NULL);
-INSERT INTO `parking_list` VALUES (9, '0', 'A09', '1', NULL);
-INSERT INTO `parking_list` VALUES (10, '0', 'A10', '1', NULL);
-INSERT INTO `parking_list` VALUES (11, '0', 'B01', '1', NULL);
-INSERT INTO `parking_list` VALUES (12, '0', 'B02', '1', NULL);
-INSERT INTO `parking_list` VALUES (13, '0', 'B03', '1', NULL);
-INSERT INTO `parking_list` VALUES (14, '0', 'B04', '1', NULL);
-INSERT INTO `parking_list` VALUES (15, '0', 'B05', '1', NULL);
-INSERT INTO `parking_list` VALUES (16, '0', 'B06', '1', NULL);
-INSERT INTO `parking_list` VALUES (17, '0', 'B07', '1', NULL);
-INSERT INTO `parking_list` VALUES (18, '0', 'B08', '1', NULL);
-INSERT INTO `parking_list` VALUES (19, '0', 'B09', '1', NULL);
-INSERT INTO `parking_list` VALUES (20, '0', 'B10', '1', NULL);
-INSERT INTO `parking_list` VALUES (21, '1', 'C01', '1', NULL);
-INSERT INTO `parking_list` VALUES (22, '1', 'C02', '1', NULL);
-INSERT INTO `parking_list` VALUES (23, '1', 'C03', '1', NULL);
-INSERT INTO `parking_list` VALUES (24, '1', 'C04', '1', NULL);
-INSERT INTO `parking_list` VALUES (25, '1', 'C05', '1', NULL);
-INSERT INTO `parking_list` VALUES (26, '1', 'C06', '1', NULL);
-INSERT INTO `parking_list` VALUES (27, '1', 'C07', '1', NULL);
-INSERT INTO `parking_list` VALUES (28, '1', 'C08', '0', NULL);
-INSERT INTO `parking_list` VALUES (29, '1', 'C09', '0', NULL);
-INSERT INTO `parking_list` VALUES (30, '1', 'C10', '0', NULL);
-INSERT INTO `parking_list` VALUES (31, '1', 'D01', '1', NULL);
-INSERT INTO `parking_list` VALUES (32, '1', 'D02', '1', NULL);
-INSERT INTO `parking_list` VALUES (33, '1', 'D03', '0', NULL);
-INSERT INTO `parking_list` VALUES (34, '1', 'D04', '0', NULL);
-INSERT INTO `parking_list` VALUES (35, '1', 'D05', '0', NULL);
-INSERT INTO `parking_list` VALUES (36, '1', 'D06', '0', NULL);
-INSERT INTO `parking_list` VALUES (37, '1', 'D07', '0', NULL);
-INSERT INTO `parking_list` VALUES (38, '1', 'D08', '0', NULL);
-INSERT INTO `parking_list` VALUES (39, '1', 'D09', '0', NULL);
-INSERT INTO `parking_list` VALUES (40, '1', 'D10', '0', NULL);
-INSERT INTO `parking_list` VALUES (41, '1', 'E01', '0', NULL);
-INSERT INTO `parking_list` VALUES (42, '1', 'E02', '0', NULL);
-INSERT INTO `parking_list` VALUES (43, '1', 'E03', '0', NULL);
-INSERT INTO `parking_list` VALUES (44, '1', 'E04', '0', NULL);
-INSERT INTO `parking_list` VALUES (45, '1', 'E05', '0', NULL);
-INSERT INTO `parking_list` VALUES (46, '1', 'E06', '0', NULL);
-INSERT INTO `parking_list` VALUES (47, '1', 'E07', '0', NULL);
-INSERT INTO `parking_list` VALUES (48, '1', 'E08', '0', NULL);
-INSERT INTO `parking_list` VALUES (49, '1', 'E09', '0', NULL);
-INSERT INTO `parking_list` VALUES (50, '1', 'E10', '0', NULL);
+INSERT INTO `parking_list` VALUES (1, '0', '0', 'A01', '0', NULL);
+INSERT INTO `parking_list` VALUES (2, '0', '0', 'A02', '1', NULL);
+INSERT INTO `parking_list` VALUES (3, '0', '0', 'A03', '1', NULL);
+INSERT INTO `parking_list` VALUES (4, '0', '0', 'A04', '1', NULL);
+INSERT INTO `parking_list` VALUES (5, '0', '0', 'A05', '1', NULL);
+INSERT INTO `parking_list` VALUES (6, '0', '0', 'A06', '1', NULL);
+INSERT INTO `parking_list` VALUES (7, '0', '0', 'A07', '1', NULL);
+INSERT INTO `parking_list` VALUES (8, '0', '0', 'A08', '1', NULL);
+INSERT INTO `parking_list` VALUES (9, '0', '0', 'A09', '1', NULL);
+INSERT INTO `parking_list` VALUES (10, '0', '0', 'A10', '1', NULL);
+INSERT INTO `parking_list` VALUES (11, '0', '1', 'B01', '1', NULL);
+INSERT INTO `parking_list` VALUES (12, '0', '1', 'B02', '1', NULL);
+INSERT INTO `parking_list` VALUES (13, '0', '1', 'B03', '1', NULL);
+INSERT INTO `parking_list` VALUES (14, '0', '1', 'B04', '1', NULL);
+INSERT INTO `parking_list` VALUES (15, '0', '1', 'B05', '1', NULL);
+INSERT INTO `parking_list` VALUES (16, '0', '1', 'B06', '1', NULL);
+INSERT INTO `parking_list` VALUES (17, '0', '1', 'B07', '1', NULL);
+INSERT INTO `parking_list` VALUES (18, '0', '1', 'B08', '1', NULL);
+INSERT INTO `parking_list` VALUES (19, '0', '1', 'B09', '1', NULL);
+INSERT INTO `parking_list` VALUES (20, '0', '1', 'B10', '1', NULL);
+INSERT INTO `parking_list` VALUES (21, '1', '2', 'C01', '1', NULL);
+INSERT INTO `parking_list` VALUES (22, '1', '2', 'C02', '1', NULL);
+INSERT INTO `parking_list` VALUES (23, '1', '2', 'C03', '1', NULL);
+INSERT INTO `parking_list` VALUES (24, '1', '2', 'C04', '1', NULL);
+INSERT INTO `parking_list` VALUES (25, '1', '2', 'C05', '1', NULL);
+INSERT INTO `parking_list` VALUES (26, '1', '2', 'C06', '1', NULL);
+INSERT INTO `parking_list` VALUES (27, '1', '2', 'C07', '1', NULL);
+INSERT INTO `parking_list` VALUES (28, '1', '2', 'C08', '0', NULL);
+INSERT INTO `parking_list` VALUES (29, '1', '2', 'C09', '0', NULL);
+INSERT INTO `parking_list` VALUES (30, '1', '2', 'C10', '0', NULL);
+INSERT INTO `parking_list` VALUES (31, '1', '3', 'D01', '1', NULL);
+INSERT INTO `parking_list` VALUES (32, '1', '3', 'D02', '1', NULL);
+INSERT INTO `parking_list` VALUES (33, '1', '3', 'D03', '0', NULL);
+INSERT INTO `parking_list` VALUES (34, '1', '3', 'D04', '0', NULL);
+INSERT INTO `parking_list` VALUES (35, '1', '3', 'D05', '0', NULL);
+INSERT INTO `parking_list` VALUES (36, '1', '3', 'D06', '0', NULL);
+INSERT INTO `parking_list` VALUES (37, '1', '3', 'D07', '0', NULL);
+INSERT INTO `parking_list` VALUES (38, '1', '3', 'D08', '0', NULL);
+INSERT INTO `parking_list` VALUES (39, '1', '3', 'D09', '0', NULL);
+INSERT INTO `parking_list` VALUES (40, '1', '3', 'D10', '0', NULL);
+INSERT INTO `parking_list` VALUES (41, '1', '3', 'E01', '0', NULL);
+INSERT INTO `parking_list` VALUES (42, '1', '3', 'E02', '0', NULL);
+INSERT INTO `parking_list` VALUES (43, '1', '3', 'E03', '0', NULL);
+INSERT INTO `parking_list` VALUES (44, '1', '3', 'E04', '0', NULL);
+INSERT INTO `parking_list` VALUES (45, '1', '3', 'E05', '0', NULL);
+INSERT INTO `parking_list` VALUES (46, '1', '3', 'E06', '0', NULL);
+INSERT INTO `parking_list` VALUES (47, '1', '3', 'E07', '0', NULL);
+INSERT INTO `parking_list` VALUES (48, '1', '3', 'E08', '0', NULL);
+INSERT INTO `parking_list` VALUES (49, '1', '3', 'E09', '0', NULL);
+INSERT INTO `parking_list` VALUES (50, '1', '3', 'E10', '0', NULL);
 
 -- ----------------------------
 -- Table structure for sys_menu

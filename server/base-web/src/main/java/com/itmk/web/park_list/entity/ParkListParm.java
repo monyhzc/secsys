@@ -9,4 +9,5 @@ public class ParkListParm {
     private String parkName;
     private String parkStatus;
     private String parkType;
+    private String vehicleType;
 }
