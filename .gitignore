@@ -1,0 +1,38 @@
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Node / Vue
+client/node_modules/
+client/dist/
+client/.cache/
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+client/.env.local
+client/.env.*.local
+
+# Maven / Java
+server/**/target/
+server/**/.mvn/
+server/**/dependency-reduced-pom.xml
+
+# Logs / temp
+*.log
+logs/
+tmp/
+
+# Docker artifacts
+docker/mysql-data/
+docker/*.pid
+
+# Archives / backups
+*.zip
+*.tar
+*.tar.gz
+
+# Misc
+run.sh

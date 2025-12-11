@@ -1,0 +1,9 @@
+client/node_modules
+client/dist
+client/.cache
+client/.vscode
+client/.idea
+server/target
+.git
+.gitignore
+docker-compose.yml

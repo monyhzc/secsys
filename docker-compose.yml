@@ -1,0 +1,38 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: secsys-mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: grad_wygl
+      MYSQL_USER: secsys
+      MYSQL_PASSWORD: secsys123
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/grad_wygl.sql:/docker-entrypoint-initdb.d/02-grad_wygl.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  secsys:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secsys-app
+    environment:
+      SPRING_PROFILES_ACTIVE: test
+      JAVA_OPTS: ""
+    ports:
+      - "8100:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
