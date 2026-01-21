@@ -38,6 +38,9 @@ public class User implements UserDetails,Serializable {
     private String status;
     //0：启用 1：禁用
     private String isUsed;
+    //所属物业公司ID
+    @TableField("company_id")
+    private Long companyId;
 
     //下面的字段，属于spring security的UserDetails的字段
     //帐户是否过期(1 未过期，0已过期)

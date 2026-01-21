@@ -327,6 +327,16 @@ public class UserController {
      */
     @GetMapping("/list")
     public ResultVo list(UserParm parm) {
+        // 数据隔离手动处理：如果当前用户有公司ID，则只能查询该公司下的员工
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            if (currentUser.getCompanyId() != null) {
+                // 这里的 list 逻辑需要修改，原 service.list(parm) 可能构造了 QueryWrapper
+                // 我们需要深入 service 看看，或者在这里直接 set 到 parm 中 (假设 UserParm 有 companyId 字段或者通用扩展)
+                // 暂时假设 UserParm 没有，我们需要看看 UserService.list(parm) 的实现
+            }
+        }
         IPage<User> list = userService.list(parm);
         //前端不展示密码
         list.getRecords().stream().forEach(item -> item.setPassword(""));

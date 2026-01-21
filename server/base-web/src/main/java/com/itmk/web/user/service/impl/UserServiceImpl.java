@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 /**
  * 继承 ServiceImpl 的好处是 可以使用 Mybatis-Plus的通用CRUD方法，
  * implements UserService的原因，是如果 Mybatis-Plus的通用CRUD方法不够用，或者不符合开发需求的
@@ -42,6 +45,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(StringUtils.isNotEmpty(parm.getLoginName())){
             query.lambda().like(User::getLoginName,parm.getLoginName());
         }
+        
+        // 数据隔离
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            if (currentUser.getCompanyId() != null) {
+                query.lambda().eq(User::getCompanyId, currentUser.getCompanyId());
+            }
+        }
+        
         return this.baseMapper.selectPage(page,query);
     }
 

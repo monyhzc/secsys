@@ -34,6 +34,9 @@ public class HouseList implements Serializable {
 
     //使用面积
     private String houseArea;
-    //使用状态  0:未使用 1：已使用
-    private String status;
-}
+        //使用状态 0:未使用 1：已使用
+        private String status;
+        //所属物业公司ID
+        @TableField("company_id")
+        private Long companyId;
+    }
