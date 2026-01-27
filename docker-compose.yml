@@ -10,7 +10,7 @@ services:
       MYSQL_PASSWORD: secsys123
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./database/grad_wygl.sql:/docker-entrypoint-initdb.d/02-grad_wygl.sql:ro
+      - ./database/initial_schema.sql:/docker-entrypoint-initdb.d/01-initial_schema.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
