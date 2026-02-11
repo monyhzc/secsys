@@ -12,4 +12,7 @@ public class HouseBuildingParm implements Serializable {
     private Long pageSize;
     //当前页
     private Long currentPage;
+    
+    // 【新增】数据权限过滤字段
+    private Long companyId;
 }

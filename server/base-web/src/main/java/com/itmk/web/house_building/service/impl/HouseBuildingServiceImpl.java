@@ -8,25 +8,31 @@ import com.itmk.web.house_building.entity.HouseBuilding;
 import com.itmk.web.house_building.entity.HouseBuildingParm;
 import com.itmk.web.house_building.mapper.HouseBuildingMapper;
 import com.itmk.web.house_building.service.HouseBuildingService;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HouseBuildingServiceImpl extends ServiceImpl<HouseBuildingMapper, HouseBuilding> implements HouseBuildingService {
+    
     @Override
     public IPage<HouseBuilding> getList(HouseBuildingParm parm) {
-        //构造查询条件
-        QueryWrapper<HouseBuilding> query = new QueryWrapper<>();
-        if(StringUtils.isNotEmpty(parm.getName())){
-            query.lambda().like(HouseBuilding::getName,parm.getName());
-        }
-        if(StringUtils.isNotEmpty(parm.getType())){
-            query.lambda().eq(HouseBuilding::getType,parm.getType());
-        }
-        //构造分页对象
+        // 构造分页对象
         IPage<HouseBuilding> page = new Page<>();
         page.setSize(parm.getPageSize());
         page.setCurrent(parm.getCurrentPage());
-        return this.baseMapper.selectPage(page,query);
+        
+        // 调用自定义 Mapper 方法
+        return this.baseMapper.getList(page, parm);
+    }
+
+    /**
+     * 根据公司ID删除楼栋
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteByCompanyId(Long companyId) {
+        QueryWrapper<HouseBuilding> query = new QueryWrapper<>();
+        query.lambda().eq(HouseBuilding::getCompanyId, companyId);
+        this.remove(query);
     }
 }

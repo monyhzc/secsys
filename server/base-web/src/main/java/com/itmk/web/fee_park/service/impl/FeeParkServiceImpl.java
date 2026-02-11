@@ -15,8 +15,14 @@ public class FeeParkServiceImpl extends ServiceImpl<FeeParkMapper, FeePark> impl
     public IPage<FeePark> getList(FeeParkParm parkParm) {
         //构造分页对象
         IPage<FeePark> page = new Page<>();
-        page.setSize(parkParm.getPageSize());
-        page.setCurrent(parkParm.getCurrentPage());
-        return this.baseMapper.getList(page,parkParm.getUserName(),parkParm.getParkName(),parkParm.getPayParkStatus());
+        if (parkParm != null) {
+            page.setSize(parkParm.getPageSize());
+            page.setCurrent(parkParm.getCurrentPage());
+            return this.baseMapper.getList(page,parkParm.getUserName(),parkParm.getParkName(),parkParm.getPayParkStatus());
+        } else {
+            page.setSize(10);
+            page.setCurrent(1);
+            return this.baseMapper.getList(page,null,null,null);
+        }
     }
 }

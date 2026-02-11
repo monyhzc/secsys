@@ -31,6 +31,15 @@ public class LiveUser implements UserDetails, Serializable {
     private String password;
     //状态 0:启用 1：禁用
     private String status;
+    
+    // 所属物业公司ID
+    @TableField("company_id")
+    private Long companyId;
+
+    // 显示用的公司名称 (非数据库字段)
+    @TableField(exist = false)
+    private String companyName;
+
     //角色id不属于业主表，需要排除
     @TableField(exist =  false)
     private Long roleId;

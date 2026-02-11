@@ -6,7 +6,11 @@ import com.itmk.web.live_user.entity.LiveUser;
 import org.apache.ibatis.annotations.Param;
 
 public interface LiveUserMapper extends BaseMapper<LiveUser> {
-    IPage<LiveUser> getList(IPage<LiveUser> page, @Param("loginName") String loginName,@Param("phone") String phone);
+    
+    IPage<LiveUser> getList(IPage<LiveUser> page, 
+                            @Param("loginName") String loginName,
+                            @Param("phone") String phone,
+                            @Param("companyId") Long companyId);
 
     LiveUser getUser(@Param("userId") Long userId);
 }

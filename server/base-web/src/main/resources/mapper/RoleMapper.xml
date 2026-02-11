@@ -1,7 +1,28 @@
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.itmk.web.role.mapper.RoleMapper">
+
+    <select id="getList" resultType="com.itmk.web.role.entity.Role">
+        SELECT
+            r.*,
+            c.company_name AS companyName
+        FROM
+            sys_role r
+        LEFT JOIN
+            sys_company c ON r.company_id = c.company_id
+        <where>
+            <if test="parm.roleName != null and parm.roleName != ''">
+                AND r.role_name LIKE CONCAT('%', #{parm.roleName}, '%')
+            </if>
+            
+            <if test="parm.companyId != null">
+                AND (
+                    r.company_id = #{parm.companyId}
+                    OR r.company_id IS NULL
+                )
+            </if>
+        </where>
+        ORDER BY r.role_id ASC
+    </select>
 
 </mapper>

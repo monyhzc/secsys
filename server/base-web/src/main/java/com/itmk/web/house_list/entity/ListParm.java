@@ -2,16 +2,15 @@ package com.itmk.web.house_list.entity;
 
 import lombok.Data;
 
-import java.io.Serializable;
-
 @Data
-public class ListParm implements Serializable {
-    //栋数名称
+public class ListParm {
     private String buildNme;
-    private String status;
-    //单元名称
     private String unitName;
     private String houseNum;
+    private String status;
     private Long currentPage;
     private Long pageSize;
+    
+    // 【新增】
+    private Long companyId;
 }

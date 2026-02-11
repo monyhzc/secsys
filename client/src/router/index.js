@@ -12,8 +12,8 @@ import Layout from '@/layout'
  *
  * hidden: true                   如果设置为 true，该项将不会在侧边栏中显示（默认为 false）
  * alwaysShow: true               如果设置为 true，将始终显示根菜单
- *                                如果不设置 alwaysShow，当项目有多个子路由时，
- *                                它将变为嵌套模式，否则不显示根菜单
+ * 如果不设置 alwaysShow，当项目有多个子路由时，
+ * 它将变为嵌套模式，否则不显示根菜单
  * redirect: noRedirect           如果设置为 noRedirect，将不会在面包屑导航中重定向
  * name:'router-name'             名称由 <keep-alive> 使用（必须设置!!!）
  * meta : {

@@ -7,15 +7,15 @@ import com.itmk.utils.ResultVo;
 import com.itmk.web.house_unit.entity.HouseUnit;
 import com.itmk.web.house_unit.entity.HouseUnitParm;
 import com.itmk.web.house_unit.service.HouseUnitService;
+import com.itmk.web.user.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * 房屋单元控制器
- */
 @RestController
 @RequestMapping("/api/houseUnit")
 public class HouseUnitController {
@@ -27,17 +27,39 @@ public class HouseUnitController {
      */
     @GetMapping("/list")
     public ResultVo getList(HouseUnitParm houseUnitParm){
+        // --- 权限隔离 ---
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            if (currentUser.getCompanyId() != null) {
+                houseUnitParm.setCompanyId(currentUser.getCompanyId());
+            }
+        }
+        // ----------------
         IPage<HouseUnit> list = houseUnitService.getList(houseUnitParm);
         return ResultUtils.success("查询成功",list);
     }
 
     /**
      * 单元新增
-     * @return
      */
     @PostMapping
     @PreAuthorize("hasAuthority('sys:houseUnit:add')")
     public ResultVo add(@RequestBody HouseUnit houseUnit){
+        // --- 归属逻辑 ---
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            if (currentUser.getCompanyId() != null) {
+                houseUnit.setCompanyId(currentUser.getCompanyId());
+            } else {
+                if(houseUnit.getCompanyId() == null){
+                    return ResultUtils.error("平台管理员必须选择所属公司");
+                }
+            }
+        }
+        // ----------------
+        
         boolean save = houseUnitService.save(houseUnit);
         if(save){
             return ResultUtils.success("新增单元成功!");
@@ -47,7 +69,6 @@ public class HouseUnitController {
 
     /**
      * 单元编辑
-     * @return
      */
     @PutMapping
     @PreAuthorize("hasAuthority('sys:houseUnit:edit')")
@@ -71,7 +92,8 @@ public class HouseUnitController {
         }
         return ResultUtils.error("删除失败!");
     }
-    /**
+    
+        /**
      * 根据栋数id查询单元列表
      */
     @GetMapping("/getUnitListByBuildId")

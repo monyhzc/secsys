@@ -7,12 +7,18 @@ import com.itmk.web.user.entity.UserParm;
 import com.itmk.web.user_role.entity.UserRole;
 
 public interface UserService extends IService<User> {
-    //查询用户列表
+    // 查询用户列表
     IPage<User> list(UserParm parm);
-    //根据用户id查询角色
+    
+    // 根据用户id查询角色
     UserRole getRoleByUserId(UserRole userRole);
-    //保存用户角色
+    
+    // 保存用户角色
     void saveRole(UserRole userRole);
-    //根据登录名查用户信息
+    
+    // 根据登录名查用户信息
     User loadUser(String username);
+
+    // 【新增】根据公司ID删除该公司的所有员工（含角色关联）
+    void deleteByCompanyId(Long companyId);
 }

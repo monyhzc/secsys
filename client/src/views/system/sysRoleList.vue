@@ -1,9 +1,5 @@
-<!-- 系统管理---角色管理 -->
-
 <template>
   <el-main>
-    <!-- <div>11111111111111111111111</div> -->
-    <!-- 搜索表单 -->
     <el-form :model="parms" ref="searchForm" label-width="80px" :inline="true" size="small">
       <el-form-item label="角色名称">
         <el-input v-model="parms.roleName"></el-input>
@@ -14,47 +10,90 @@
         <el-button v-if="hasPerm('sys:role:add')" type="primary" icon="el-icon-plus" @click="addBtn">新增</el-button>
       </el-form-item>
     </el-form>
-    <!-- 角色列表 -->
+
     <el-table :height="tableHeight" size="small" :data="roleList" border stripe>
       <el-table-column label="角色名称" prop="roleName"></el-table-column>
+      
+      <el-table-column v-if="isPlatformAdmin" label="所属公司" prop="companyName" align="center">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.companyName" type="info">{{ scope.row.companyName }}</el-tag>
+          <span v-else>平台公共/未分配</span>
+        </template>
+      </el-table-column>
+
       <el-table-column label="备注" prop="remark"></el-table-column>
       <el-table-column align="center" width="290" label="操作">
         <template slot-scope="scope">
-          <el-button v-if="hasPerm('sys:role:edit')" type="primary" icon="el-icon-edit" size="small"
-            @click="editBtn(scope.row)">编辑</el-button>
-          <el-button v-if="hasPerm('sys:role:assignMenu')" type="success" icon="el-icon-edit" size="small"
-            @click="assignRoleBtn(scope.row)">分配权限</el-button>
-          <el-button v-if="hasPerm('sys:role:delete')" type="danger" icon="el-icon-delete" size="small"
-            @click="deleteBtn(scope.row)">删除</el-button>
+          <el-button v-if="hasPerm('sys:role:edit')" type="primary" icon="el-icon-edit" size="small" @click="editBtn(scope.row)">编辑</el-button>
+          <el-button v-if="hasPerm('sys:role:assignMenu')" type="primary" icon="el-icon-setting" size="small" @click="assignBtn(scope.row)">分配权限</el-button>
+          <el-button v-if="hasPerm('sys:role:delete')" type="danger" icon="el-icon-delete" size="small" @click="deleteBtn(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
-    <!-- 分页 -->
-    <el-pagination @size-change="sizeChange" @current-change="currentChange" :current-page.sync="parms.currentPage"
-      :page-sizes="[10, 20, 40, 80, 100]" :page-size="parms.pageSize" layout="total, sizes, prev, pager, next, jumper"
-      :total="parms.total" background>
-    </el-pagination>
-    <!-- 新增或编辑弹框 -->
-    <sys-dialog :title="dialog.title" :height="dialog.height" :width="dialog.width" :visible="dialog.visible"
-      @onClose="onClose" @onConfirm="onConfirm">
+
+    <el-pagination
+      @size-change="sizeChange"
+      @current-change="currentChange"
+      :current-page.sync="parms.currentPage"
+      :page-sizes="[10, 20, 40, 80, 100]"
+      :page-size="parms.pageSize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="parms.total"
+      background
+    ></el-pagination>
+
+    <sys-dialog
+      :title="dialog.title"
+      :visible="dialog.visible"
+      :height="dialog.height"
+      :width="dialog.width"
+      @onClose="onClose"
+      @onConfirm="onConfirm"
+    >
       <div slot="content">
         <el-form :model="addModel" ref="addForm" :rules="rules" label-width="80px" :inline="true" size="small">
           <el-form-item prop="roleName" label="角色名称">
             <el-input v-model="addModel.roleName"></el-input>
           </el-form-item>
-          <el-form-item label="角色描述">
+          
+          <el-form-item v-if="isPlatformAdmin" prop="companyId" label="所属公司">
+             <el-select v-model="addModel.companyId" placeholder="请选择" filterable clearable>
+                <el-option
+                  v-for="item in companyList"
+                  :key="item.companyId"
+                  :label="item.companyName"
+                  :value="item.companyId">
+                </el-option>
+             </el-select>
+          </el-form-item>
+
+          <el-form-item label="备注">
             <el-input v-model="addModel.remark"></el-input>
           </el-form-item>
         </el-form>
       </div>
     </sys-dialog>
-    <!-- 分配权限弹框 -->
-    <sys-dialog :title="assignDialog.title" :width="assignDialog.width" :height="assignDialog.height"
-      :visible="assignDialog.visible" @onClose="assignClose" @onConfirm="assignConfirm">
-      <template slot="content">
-        <el-tree ref="assignTree" :data="assignTreeData" node-key="menuId" :props="defaultProps" empty-text="暂无数据"
-          :show-checkbox="true" default-expand-all :default-checked-keys="assignTreeChecked"></el-tree>
-      </template>
+
+    <sys-dialog
+      :title="assignDialog.title"
+      :visible="assignDialog.visible"
+      :height="assignDialog.height"
+      :width="assignDialog.width"
+      @onClose="assignClose"
+      @onConfirm="assignConfirm"
+    >
+      <div slot="content">
+        <el-tree
+          ref="assignTree"
+          :data="assignTreeData"
+          node-key="menuId"
+          :props="defaultProps"
+          empty-text="暂无数据"
+          :show-checkbox="true"
+          :default-expand-all="true"
+          :default-checked-keys="assignTreeChecked"
+        ></el-tree>
+      </div>
     </sys-dialog>
   </el-main>
 </template>
@@ -69,175 +108,165 @@ import {
   assignSaveApi,
 } from "@/api/role";
 import SysDialog from "@/components/system/SysDialog";
-import { getUserId } from "@/utils/auth";
+// 【新增】引入公司列表API和Vuex
+import { getCompanyListApi } from "@/api/company";
+import { mapGetters } from "vuex";
+
 export default {
-  //注册组件
   components: {
     SysDialog,
   },
-  //所有需要在页面展示的数据，都要显示的在data里面进行定义
+  computed: {
+    // 【核心逻辑】复用 sysUserList 中的逻辑，通过 permission_routes 判断是否为平台管理员
+    ...mapGetters(["userInfo", "permission_routes"]),
+    isPlatformAdmin() {
+      // 只有平台管理员才有 sysCompanyList 菜单权限
+      return JSON.stringify(this.permission_routes).indexOf('sysCompanyList') !== -1;
+    }
+  },
   data() {
     return {
+      //权限树数据
       defaultProps: {
         children: "children",
         label: "menuLabel",
       },
+      assignTreeData: [],
+      assignTreeChecked: [],
       //角色id
       roleId: "",
-      //分配权限树数据
-      assignTreeData: [],
-      //树默认选中的节点
-      assignTreeChecked: [],
       //分配权限弹框属性
       assignDialog: {
         title: "",
-        width: 300,
-        height: 500,
         visible: false,
+        height: 450,
+        width: 300,
       },
-      //表单验证规则
-      rules: {
-        roleName: [
-          {
-            required: true,
-            trigger: "change",
-            message: "请填写角色名称",
-          },
-        ],
-      },
-      //新增或编辑数据域
-      addModel: {
-        type: "", //标识新增或编辑  0：新增 1：编辑
-        roleId: "",
+      //表格高度
+      tableHeight: 0,
+      //列表数据
+      roleList: [],
+      // 【新增】公司列表
+      companyList: [],
+      //列表分页查询参数
+      parms: {
+        pageSize: 10,
+        currentPage: 1,
         roleName: "",
-        remark: "",
+        total: 0,
       },
       //弹框属性
       dialog: {
         title: "",
-        height: 150,
-        width: 610,
         visible: false,
+        height: 150, // 默认高度
+        width: 630,
       },
-      //表格数据
-      roleList: [],
-      //表格的高度
-      tableHeight: 0,
-      //查询参数
-      parms: {
-        pageSize: 10, //每页显示几条数据
-        currentPage: 1, //当前第几页
+      //新增表单绑定数据
+      addModel: {
+        roleId: "",
         roleName: "",
-        total: 0, //总条数
+        remark: "",
+        type: "", //0:新增 1：编辑
+        companyId: "" // 【新增】绑定公司ID
+      },
+      //表单验证规则
+      rules: {
+        roleName: [{ required: true, trigger: "blur", message: "请输入角色名称" }],
+        // 【新增】平台管理员必选公司，mounted中动态控制
+        companyId: [{ required: false, trigger: "change", message: "请选择所属公司" }]
       },
     };
-  },
-  created() {
-    this.getRoleList();
   },
   mounted() {
     this.$nextTick(() => {
       this.tableHeight = window.innerHeight - 210;
     });
+    this.getRoleList();
+    
+    // 【新增】如果是平台管理员，加载公司列表并开启必填校验
+    if (this.isPlatformAdmin) {
+      this.getCompanyList();
+      this.rules.companyId[0].required = true;
+    }
   },
   methods: {
+    // 【新增】获取公司列表
+    async getCompanyList() {
+      let res = await getCompanyListApi({ currentPage: 1, pageSize: 999 });
+      if (res && res.code == 200) {
+        this.companyList = res.data.records;
+      }
+    },
     //分配权限确认
     async assignConfirm() {
-      //获取选中的节点id
       let ids = this.$refs.assignTree
         .getCheckedKeys()
         .concat(this.$refs.assignTree.getHalfCheckedKeys());
-      console.log(ids);
       let parm = {
         roleId: this.roleId,
         list: ids,
       };
       let res = await assignSaveApi(parm);
-      console.log(res);
       if (res && res.code == 200) {
         this.$message.success(res.msg);
         this.assignDialog.visible = false;
       }
     },
-    //分配权限取消
+    //分配权限弹框关闭
     assignClose() {
       this.assignDialog.visible = false;
     },
     //分配权限按钮
-    async assignRoleBtn(row) {
-      console.log(row)
-      //清空数据
-      this.roleId = "";
-      this.assignTreeData = [];
-      this.assignTreeChecked = [];
+    async assignBtn(row) {
       this.roleId = row.roleId;
-      //弹框属性设置
       this.assignDialog.title = "为【" + row.roleName + "】分配权限";
       this.assignDialog.visible = true;
-
-      //获取树的数据
       let parm = {
-        roleId: this.roleId,
-        userId: getUserId(),
+        userId: this.$store.getters.userId,
+        roleId: row.roleId,
       };
       let res = await getAssignTreeApi(parm);
       if (res && res.code == 200) {
-        console.log(res);
-        //赋值
         this.assignTreeData = res.data.listmenu;
         this.assignTreeChecked = res.data.checkList;
-        //如果默认选中有数据
-        if (this.assignTreeChecked.length > 0) {
-          let newArr = [];
-          this.assignTreeChecked.forEach((item) => {
-            this.checked(item, this.assignTreeData, newArr);
-          });
-          this.assignTreeChecked = newArr;
-        }
       }
     },
-    checked(id, data, newArr) {
-      data.forEach((item) => {
-        if (item.menuId == id) {
-          if (item.children && item.children.length == 0) {
-            newArr.push(item.menuId);
-          }
-        } else {
-          if (item.children && item.children.length != 0) {
-            this.checked(id, item.children, newArr);
-          }
-        }
-      });
+    //获取列表
+    async getRoleList() {
+      let res = await getRoleListApi(this.parms);
+      if (res && res.code == 200) {
+        this.roleList = res.data.records;
+        this.parms.total = res.data.total;
+      }
+    },
+    //搜索按钮
+    searchBtn() {
+      this.getRoleList();
     },
     //删除按钮
     async deleteBtn(row) {
-      //提示信息
-      let confirm = await this.$myconfirm("确定删除该数据吗？");
-      console.log(confirm);
+      let confirm = await this.$myconfirm("确定删除该数据吗?");
       if (confirm) {
         let res = await deleteRoleApi({ roleId: row.roleId });
         if (res && res.code == 200) {
-          //刷新表格
-          this.getRoleList();
           this.$message.success(res.msg);
+          this.getRoleList();
         }
       }
     },
     //编辑按钮
     editBtn(row) {
-      //清空表单
       this.$resetForm("addForm", this.addModel);
-      //设置标识
       this.addModel.type = "1";
-      //把当前编辑的数据数值给表单数据域
-      this.$objCoppy(row, this.addModel);
-      //设置弹框属性
       this.dialog.title = "编辑角色";
+      this.$objCoppy(row, this.addModel);
+      // 动态高度
+      this.dialog.height = this.isPlatformAdmin ? 200 : 150;
       this.dialog.visible = true;
     },
-    //新增或编辑确认事件
+    //确认事件
     onConfirm() {
-      //表单验证
       this.$refs.addForm.validate(async (valid) => {
         if (valid) {
           let res = null;
@@ -275,10 +304,14 @@ export default {
     addBtn() {
       //清空表单数据
       this.$resetForm("addForm", this.addModel);
-      //设置新增或编辑的状态
+      // 如果不是平台管理员，重置公司ID
+      if (!this.isPlatformAdmin) {
+        this.addModel.companyId = "";
+      }
       this.addModel.type = "0";
-      //设置弹框属性
       this.dialog.title = "新增角色";
+      // 动态高度
+      this.dialog.height = this.isPlatformAdmin ? 200 : 150;
       this.dialog.visible = true;
     },
     //重置按钮
@@ -286,21 +319,51 @@ export default {
       this.parms.roleName = "";
       this.getRoleList();
     },
-    //搜索按钮
-    searchBtn() {
-      this.getRoleList();
-    },
-    //获取角色列表
-    async getRoleList() {
-      let res = await getRoleListApi(this.parms);
-      console.log(res);
-      if (res && res.code == 200) {
-        this.roleList = res.data.records;
-        this.parms.total = res.data.total;
-      }
-    },
   },
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+::v-deep .el-tree {
+  .el-tree-node {
+    position: relative;
+    padding-left: 10px;
+  }
+  .el-tree-node__children {
+    padding-left: 20px;
+  }
+  .el-tree-node :last-child:before {
+    height: 40px;
+  }
+  .el-tree > .el-tree-node:before {
+    border-left: none;
+  }
+  .el-tree > .el-tree-node:after {
+    border-top: none;
+  }
+  .el-tree-node:before,
+  .el-tree-node:after {
+    content: "";
+    left: -4px;
+    position: absolute;
+    right: auto;
+    border-width: 1px;
+  }
+  .tree :first-child .el-tree-node:before {
+    border-left: none;
+  }
+  .el-tree-node:before {
+    border-left: 1px dashed #d9d9d9;
+    bottom: 0px;
+    height: 100%;
+    top: -25px;
+    width: 1px;
+  }
+  .el-tree-node:after {
+    border-top: 1px dashed #d9d9d9;
+    height: 20px;
+    top: 14px;
+    width: 24px;
+  }
+}
+</style>

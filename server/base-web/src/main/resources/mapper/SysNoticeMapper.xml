@@ -4,8 +4,28 @@
 
 <mapper namespace="com.itmk.web.sys_notice.mapper.SysNoticeMapper">
 
-
     <select id="getOne" resultType="com.itmk.web.sys_notice.entity.SysNotice">
-        select * from sys_notice order by create_time desc limit 1
+        select * from sys_notice ${ew.customSqlSegment} limit 1
     </select>
+
+    <select id="getList" resultType="com.itmk.web.sys_notice.entity.SysNotice">
+        SELECT
+            n.*,
+            c.company_name AS companyName
+        FROM
+            sys_notice n
+        LEFT JOIN
+            sys_company c ON n.company_id = c.company_id
+        <where>
+            <if test="parm.title != null and parm.title != ''">
+                AND n.title LIKE CONCAT('%', #{parm.title}, '%')
+            </if>
+            
+            <if test="parm.companyId != null">
+                AND n.company_id = #{parm.companyId}
+            </if>
+        </where>
+        ORDER BY n.create_time DESC
+    </select>
+
 </mapper>

@@ -7,7 +7,7 @@ public class UserParm {
     //页容量
     private Long pageSize;
     //当前页
-    private Long curentPage;
+    private Long currentPage;
     //姓名
     private String loginName;
     //电话

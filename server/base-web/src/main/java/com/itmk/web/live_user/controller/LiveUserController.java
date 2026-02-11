@@ -2,22 +2,19 @@ package com.itmk.web.live_user.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itmk.utils.ResultUtils;
 import com.itmk.utils.ResultVo;
 import com.itmk.web.fee_park.entity.FeePark;
 import com.itmk.web.fee_park.service.FeeParkService;
-import com.itmk.web.fee_power.entity.FeePower;
-import com.itmk.web.fee_power.service.FeePowerService;
-import com.itmk.web.fee_water.entity.FeeWater;
-import com.itmk.web.fee_water.service.FeeWaterService;
-import com.itmk.web.live_park.entity.LivePark;
 import com.itmk.web.live_user.entity.AssignHouseParm;
 import com.itmk.web.live_user.entity.LiveUser;
 import com.itmk.web.live_user.entity.LiveUserParm;
 import com.itmk.web.live_user.service.LiveUserService;
+import com.itmk.web.user.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
@@ -25,53 +22,79 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 业主控制器
+ * 业主管理控制器
  */
 @RestController
 @RequestMapping("/api/liveUser")
 public class LiveUserController {
     @Autowired
     private LiveUserService liveUserService;
-    @Autowired
-    private FeeWaterService feeWaterService;
-    @Autowired
-    private FeePowerService feePowerService;
-    @Autowired
-    private FeeParkService feeParkService;
+    
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    /**
-     * 业主列表查询
-     */
+    // 保留停车费服务，用于删除时的欠费检查
+    @Autowired
+    private FeeParkService feeParkService;
 
+    /**
+     * 分页查询业主列表
+     */
     @GetMapping("/list")
-    public ResultVo getList(LiveUserParm liveUserParm){
-        //构造分页对象
-        IPage<LiveUser> page = new Page<>();
-        page.setSize(liveUserParm.getPageSize());
-        page.setCurrent(liveUserParm.getCurrentPage());
-        IPage<LiveUser> list = liveUserService.getList(page, liveUserParm.getLoginName(), liveUserParm.getPhone());
-        return ResultUtils.success("查询成功",list);
+    public ResultVo list(LiveUserParm parm){
+        IPage<LiveUser> list = liveUserService.getList(parm);
+        return ResultUtils.success("查询成功", list);
     }
+
     /**
      * 新增业主
      */
     @PostMapping
     @PreAuthorize("hasAuthority('sys:liveUser:add')")
     public ResultVo add(@RequestBody LiveUser liveUser){
-        //查询登录名是否被占用
+        // 判断账号是否被占用
         QueryWrapper<LiveUser> query = new QueryWrapper<>();
-        query.lambda().eq(LiveUser::getUsername,liveUser.getUsername());
+        query.lambda().eq(LiveUser::getUsername, liveUser.getUsername());
         LiveUser one = liveUserService.getOne(query);
         if(one != null){
-            return ResultUtils.error("登录名被占用!");
+            return ResultUtils.error("账号被占用!");
         }
-        //用户名需要加密
-//        liveUser.setPassword(DigestUtils.md5DigestAsHex(liveUser.getPassword().getBytes()));
-        liveUser.setPassword(passwordEncoder.encode(liveUser.getPassword()));
-        liveUserService.saveLiveUser(liveUser);
-        return ResultUtils.success("新增业主成功!");
+        // 判断电话是否被占用
+        QueryWrapper<LiveUser> queryPhone = new QueryWrapper<>();
+        queryPhone.lambda().eq(LiveUser::getPhone, liveUser.getPhone());
+        LiveUser phoneUser = liveUserService.getOne(queryPhone);
+        if(phoneUser != null){
+            return ResultUtils.error("电话被占用!");
+        }
+
+        // 处理密码加密 (默认密码123456，或者前端传来的密码)
+        // 这里的加密方式取决于您的 SpringSecurityConfig 配置，通常用 BCryptPasswordEncoder
+        // 如果原代码使用的是 MD5 (DigestUtils)，请保持原样；这里假设用 Spring Security 标准加密
+        String password = liveUser.getPassword();
+        if (password == null || password.isEmpty()) {
+            password = "666666"; // 默认密码
+        }
+        liveUser.setPassword(passwordEncoder.encode(password));
+        
+        // 设置默认状态
+        liveUser.setStatus("0");
+
+        // 权限隔离逻辑
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            if (currentUser.getCompanyId() != null) {
+                liveUser.setCompanyId(currentUser.getCompanyId());
+            } else if (liveUser.getCompanyId() == null) {
+                return ResultUtils.error("平台管理员必须选择所属公司");
+            }
+        }
+
+        boolean save = liveUserService.save(liveUser);
+        if(save){
+            return ResultUtils.success("新增业主成功");
+        }
+        return ResultUtils.error("新增业主失败");
     }
 
     /**
@@ -80,135 +103,115 @@ public class LiveUserController {
     @PutMapping
     @PreAuthorize("hasAuthority('sys:liveUser:edit')")
     public ResultVo edit(@RequestBody LiveUser liveUser){
-        //编辑判断登录名是否被占用
-        //查询登录名是否被占用
+        // 编辑时判断账号是否重复（排除自己）
         QueryWrapper<LiveUser> query = new QueryWrapper<>();
-        query.lambda().eq(LiveUser::getUsername,liveUser.getUsername());
+        query.lambda().eq(LiveUser::getUsername, liveUser.getUsername())
+                      .ne(LiveUser::getUserId, liveUser.getUserId());
         LiveUser one = liveUserService.getOne(query);
-        if(one != null && !one.getUserId().equals(liveUser.getUserId())){
-            return ResultUtils.error("登录名被占用!");
+        if(one != null){
+            return ResultUtils.error("账号被占用!");
         }
-        liveUserService.editLiveUser(liveUser);
-        return ResultUtils.success("编辑成功!");
+        
+        // 编辑时通常不修改密码，除非有单独的接口
+        // 如果前端传了空密码，则设为null防止覆盖原密码（MyBatisPlus updateById 默认策略通常是不更新 null 字段，或者手动处理）
+        liveUser.setPassword(null); 
+
+        boolean update = liveUserService.updateById(liveUser);
+        if(update){
+            return ResultUtils.success("编辑业主成功");
+        }
+        return ResultUtils.error("编辑业主失败");
     }
+
     /**
-     * 编辑查询回显
+     * 删除业主
+     * 删除前检查：是否有未缴清的停车费
      */
-    @GetMapping("/getUserById")
-    public ResultVo getUserById( LiveUser liveUser){
-        LiveUser user = liveUserService.getUser(liveUser.getUserId());
-        return ResultUtils.success("查询成功",user);
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasAuthority('sys:liveUser:delete')")
+    public ResultVo deleteUser(@PathVariable("userId") Long userId){
+        // 1. 查询停车费欠费情况
+        // 逻辑：在 fee_park 表中，如果存在 userId = 当前ID 且 payParkStatus = '0' (未缴费) 的记录，则不能删除
+        QueryWrapper<FeePark> queryPark = new QueryWrapper<>();
+        queryPark.lambda().eq(FeePark::getUserId, userId)
+                          .eq(FeePark::getPayParkStatus, "0");
+        int count = feeParkService.count(queryPark);
+        if(count > 0){
+            return ResultUtils.error("该用户有未缴清的停车费，不能删除!");
+        }
+
+        // 2. 执行删除
+        // (注：liveUserService.removeById 应该已经配置了逻辑删除或级联清理关联表，或者依靠数据库外键)
+        boolean b = liveUserService.removeById(userId);
+        if(b){
+            return ResultUtils.success("删除成功");
+        }
+        return ResultUtils.error("删除失败");
     }
+
+    /**
+     * 查询业主关联的房屋
+     */
+    @GetMapping("/getHouseByUserId")
+    public ResultVo getHouseByUserId(AssignHouseParm parm){
+        AssignHouseParm house = liveUserService.getHouseByUserId(parm);
+        return ResultUtils.success("查询成功", house);
+    }
+
+    /**
+     * 查询业主关联的车位
+     */
+    @GetMapping("/getParkByUserId")
+    public ResultVo getParkByUserId(AssignHouseParm parm){
+        AssignHouseParm park = liveUserService.getParkByUserId(parm);
+        return ResultUtils.success("查询成功", park);
+    }
+
     /**
      * 分配房屋保存
      */
-    @PostMapping("/assignSave")
-    @PreAuthorize("hasAuthority('sys:liveUser:assignHome')")
-    public ResultVo assignSave(@RequestBody AssignHouseParm parm){
-        liveUserService.assignHouse(parm);
-        return ResultUtils.success("分配房屋成功!");
+    @PostMapping("/assignHouse")
+    @PreAuthorize("hasAuthority('sys:liveUser:assignHouse')")
+    public ResultVo assignHouse(@RequestBody AssignHouseParm parm){
+        liveUserService.saveHouse(parm);
+        return ResultUtils.success("分配房屋成功");
     }
 
     /**
      * 分配车位保存
      */
-    @PostMapping("/assignParkSave")
-    @PreAuthorize("hasAuthority('sys:liveUser:assignCar')")
-    public ResultVo assignParkSave(@RequestBody LivePark livePark){
-        liveUserService.assignSavePark(livePark);
-        return ResultUtils.success("分配车位成功!");
+    @PostMapping("/assignPark")
+    @PreAuthorize("hasAuthority('sys:liveUser:assignPark')")
+    public ResultVo assignPark(@RequestBody AssignHouseParm parm){
+        liveUserService.savePark(parm);
+        return ResultUtils.success("分配车位成功");
     }
-
+    
     /**
-     * 退房：
-     *      1.查询电费、水费是否已经交清；
-     *     2.更新租户和房屋关系表状态为解绑；
-     *     3.更新房屋表的使用状态为未使用；
+     * 重置密码
      */
-    @PostMapping("/returnHose")
-    @PreAuthorize("hasAuthority('sys:liveUser:returnHome')")
-    public ResultVo returnHose(@RequestBody AssignHouseParm parm){
-        //1.查询电费、水费是否交清
-        //构造查询条件
-        QueryWrapper<FeeWater> queryWater = new QueryWrapper<>();
-        queryWater.lambda().eq(FeeWater::getHouseId,parm.getHouseId())
-                .eq(FeeWater::getUserId,parm.getUserId())
-                .eq(FeeWater::getPayWaterStatus,"0");
-        List<FeeWater> list = feeWaterService.list(queryWater);
-        if(list != null && list.size() >0){
-            return ResultUtils.error("请缴水费之后再退房!");
-        }
-        //查询电费
-        QueryWrapper<FeePower> queryPower = new QueryWrapper<>();
-        queryPower.lambda().eq(FeePower::getHouseId,parm.getHouseId())
-                .eq(FeePower::getUserId,parm.getUserId())
-                .eq(FeePower::getPayPowerStatus,"0");
-        List<FeePower> list1 = feePowerService.list(queryPower);
-        if(list1 != null && list1.size() >0){
-            return ResultUtils.error("请缴电费之后再退房!");
-        }
-        liveUserService.returnHouse(parm);
-        return ResultUtils.success("退房成功!");
-    }
-
-    /**
-     * 退车位
-     *      1.查询车位费是否已经交清；
-     *     2.更新租户和车位的关系为解绑；
-     *     3.更新车位的使用状态为未使用；
-     *
-     */
-    @PreAuthorize("hasAuthority('sys:liveUser:returnCar')")
-    @PostMapping("/returnPark")
-    public ResultVo returnPark(@RequestBody LivePark livePark){
-//        1.查询车位费是否已经交清；
-        QueryWrapper<FeePark> query = new QueryWrapper<>();
-        query.lambda().eq(FeePark::getParkId,livePark.getParkId())
-                .eq(FeePark::getUserId,livePark.getUserId())
-                .eq(FeePark::getPayParkStatus,"0");
-        List<FeePark> list = feeParkService.list(query);
-        if(list != null && list.size() >0){
-            return ResultUtils.error("请缴清停车费后再退车位!");
-        }
-        liveUserService.returnPark(livePark);
-        return ResultUtils.success("退车位成功!");
-    }
-    //删除业主
-    @DeleteMapping(value = {"/{userId}/{houseId}","/{userId}"})
-    public ResultVo deleteUser(@PathVariable("userId") Long userId,
-                               @PathVariable(value = "houseId",required = false) Long houseId){
-        //查询停车费
-        QueryWrapper<FeePark> queryPark = new QueryWrapper<>();
-        queryPark.lambda().eq(FeePark::getParkId,houseId)
-                .eq(FeePark::getUserId,userId)
-                .eq(FeePark::getPayParkStatus,"0");
-        List<FeePark> listPark = feeParkService.list(queryPark);
-        if(listPark != null && listPark.size() >0){
-            return ResultUtils.error("该用户没有缴清停车费，不能删除!");
-        }
-        //查询水费
-        QueryWrapper<FeeWater> queryWater = new QueryWrapper<>();
-        queryWater.lambda().eq(FeeWater::getHouseId,houseId)
-                .eq(FeeWater::getUserId,userId)
-                .eq(FeeWater::getPayWaterStatus,"0");
-        List<FeeWater> list = feeWaterService.list(queryWater);
-        if(list != null && list.size() >0){
-            return ResultUtils.error("该用户没有缴清水费，不能删除!");
-        }
-        //查询电费
-        QueryWrapper<FeePower> queryPower = new QueryWrapper<>();
-        queryPower.lambda().eq(FeePower::getHouseId,houseId)
-                .eq(FeePower::getUserId,userId)
-                .eq(FeePower::getPayPowerStatus,"0");
-        List<FeePower> list1 = feePowerService.list(queryPower);
-        if(list1 != null && list1.size() >0){
-            return ResultUtils.error("该用户没有缴清电费，不能删除!");
-        }
-        boolean b = liveUserService.removeById(userId);
+    @PostMapping("/resetPassword")
+    @PreAuthorize("hasAuthority('sys:liveUser:resetPwd')")
+    public ResultVo resetPassword(@RequestBody LiveUser liveUser){
+        String newPwd = "666666"; // 默认重置密码
+        // 加密
+        String encode = passwordEncoder.encode(newPwd);
+        
+        LiveUser update = new LiveUser();
+        update.setUserId(liveUser.getUserId());
+        update.setPassword(encode);
+        
+        boolean b = liveUserService.updateById(update);
         if(b){
-            return ResultUtils.success("删除成功!");
+            return ResultUtils.success("重置密码成功，新密码为：666666");
         }
-        return ResultUtils.error("删除失败");
+        return ResultUtils.error("重置密码失败");
     }
 
+    @GetMapping("/getUserById")
+    public ResultVo getUserById(LiveUser liveUser) {
+        // 调用 service 获取包含关联信息（如角色、房屋）的业主详情
+        LiveUser user = liveUserService.getUser(liveUser.getUserId());
+        return ResultUtils.success("查询成功", user);
+    }
 }

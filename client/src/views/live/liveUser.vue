@@ -1,11 +1,6 @@
-<!--管理员---- 业主管理----业主列表 -->
-
 <template>
   <el-main>
-
-    <!-- 搜索框 -->
     <el-form :model="parms" ref="searchForm" label-width="80px" :inline="true" size="small">
-
       <el-form-item label="姓名">
         <el-input v-model="parms.loginName"></el-input>
       </el-form-item>
@@ -19,7 +14,6 @@
       </el-form-item>
     </el-form>
 
-    <!-- 表格 -->
     <el-table :height="tableHeight" :data="tableList" border stripe style="width: 100%">
       <el-table-column prop="loginName" label="姓名"></el-table-column>
       <el-table-column prop="sex" label="性别">
@@ -29,6 +23,14 @@
         </template>
       </el-table-column>
       <el-table-column prop="phone" label="电话" width="110"></el-table-column>
+      
+      <el-table-column v-if="isPlatformAdmin" prop="companyName" label="所属公司" width="120" align="center">
+        <template slot-scope="scope">
+           <el-tag v-if="scope.row.companyName" type="info" size="small">{{ scope.row.companyName }}</el-tag>
+           <span v-else style="color: #999; font-size: 12px;">未分配</span>
+        </template>
+      </el-table-column>
+
       <el-table-column prop="name" label="栋数"></el-table-column>
       <el-table-column prop="unitName" label="单元"></el-table-column>
       <el-table-column prop="houseNum" label="房屋编号"></el-table-column>
@@ -57,13 +59,12 @@
         </template>
       </el-table-column>
     </el-table>
-    <!-- 分页 -->
+    
     <el-pagination @size-change="sizeChange" @current-change="currentChange" :current-page.sync="parms.currentPage"
       :page-sizes="[10, 20, 40, 80, 100]" :page-size="parms.pageSize" layout="total, sizes, prev, pager, next, jumper"
       :total="parms.total" background>
     </el-pagination>
 
-    <!-- 弹框 -->
     <sys-dialog :title="addDialog.title" :height="addDialog.height" :width="addDialog.width"
       :visible="addDialog.visible" @onClose="onClose" @onConfirm="onConfirm">
       <template slot="content">
@@ -80,12 +81,18 @@
           <el-form-item prop="phone" label="电话">
             <el-input v-model="addModel.phone"></el-input>
           </el-form-item>
-          <el-form-item prop="roleId" label="角色">
-            <el-select v-model="addModel.roleId">
-              <el-option v-for="item in roleList" :key="item.roleId" :label="item.roleName" :value="item.roleId">
-              </el-option>
-            </el-select>
+          
+          <el-form-item v-if="isPlatformAdmin" prop="companyId" label="所属公司">
+             <el-select v-model="addModel.companyId" placeholder="请选择" filterable clearable>
+                <el-option
+                  v-for="item in companyList"
+                  :key="item.companyId"
+                  :label="item.companyName"
+                  :value="item.companyId">
+                </el-option>
+             </el-select>
           </el-form-item>
+
           <el-form-item prop="username" label="账户">
             <el-input v-model="addModel.username"></el-input>
           </el-form-item>
@@ -101,12 +108,11 @@
         </el-form>
       </template>
     </sys-dialog>
-    <!-- 绑定房屋 -->
+    
     <sys-dialog :title="assignHouseDialog.title" :height="assignHouseDialog.height" :width="assignHouseDialog.width"
       :visible="assignHouseDialog.visible" @onClose="assignHoseClose" @onConfirm="assignHoseConfirm">
       <template slot="content">
         <el-main style="padding: 0px">
-          <!-- 搜索框 -->
           <el-form :model="houseParms" ref="assignHoseForm" label-width="70px" :inline="true" size="small">
             <el-form-item label="栋数名称">
               <el-input placeholder="请输入栋数名称" v-model="houseParms.buildNme"></el-input>
@@ -122,7 +128,6 @@
               <el-button icon="el-icon-close" @click="assignHouseResetBtn">重置</el-button>
             </el-form-item>
           </el-form>
-          <!-- 表格 -->
           <el-table :height="assignTableHeight * 2.2" :data="houseList" border stripe>
             <el-table-column width="50" align="center" label="选择">
               <template slot-scope="scope">
@@ -143,7 +148,6 @@
               </template>
             </el-table-column>
           </el-table>
-          <!-- 分页 -->
           <el-pagination @size-change="assignHouseSize" @current-change="assignHouseChange"
             :current-page.sync="houseParms.currentPage" :page-sizes="[10, 20, 40, 80, 100]"
             :page-size="houseParms.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="houseParms.total"
@@ -152,12 +156,11 @@
         </el-main>
       </template>
     </sys-dialog>
-    <!-- 绑定车位 -->
+
     <sys-dialog :title="parkDialog.title" :height="parkDialog.height" :width="parkDialog.width"
       :visible="parkDialog.visible" @onClose="parkOnClose" @onConfirm="parkOnConfirm">
       <template slot="content">
         <el-main style="padding: 0px">
-          <!-- 搜索框 -->
           <el-form :model="parkParms" label-width="80px" :inline="true" size="small">
             <el-form-item label="车位名称">
               <el-input v-model="parkParms.parkName"></el-input>
@@ -167,7 +170,6 @@
               <el-button style="color: #ff7670" icon="el-icon-close" @click="parkResetBtn">重置</el-button>
             </el-form-item>
           </el-form>
-          <!-- 表格 -->
           <el-table :height="parkTableHeight * 2.3" :data="parkList" border stripe>
             <el-table-column align="center" label="操作" width="50">
               <template slot-scope="scope">
@@ -207,7 +209,6 @@
               </template>
             </el-table-column>
           </el-table>
-          <!-- 分页 -->
           <el-pagination @size-change="assignParkSizeChange" @current-change="assignParkCurrentChange"
             :current-page.sync="parkParms.currentPage" :page-sizes="[10, 20, 40, 80, 100]"
             :page-size="parkParms.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="parkParms.total"
@@ -222,7 +223,6 @@
 <script>
 import SysDialog from "@/components/system/SysDialog.vue";
 import {
-  getRoleListApi,
   addApi,
   getListApi,
   getUserByIdApi,
@@ -235,8 +235,20 @@ import {
   returnParkApi,
   deleteUserApi,
 } from "@/api/liveUser";
+// 引入公司API和Vuex
+import { getCompanyListApi } from "@/api/company";
+import { mapGetters } from "vuex";
+
 export default {
   components: { SysDialog },
+  computed: {
+    ...mapGetters(["permission_routes"]),
+    // 判断是否为平台管理员
+    isPlatformAdmin() {
+      // 简单判断：如果拥有“公司管理”菜单权限，则认为是平台管理员
+      return JSON.stringify(this.permission_routes).indexOf('sysCompanyList') !== -1;
+    }
+  },
   data() {
     const parkTypeMap = {
       "0": { label: "地上", tag: "warning" },
@@ -251,23 +263,21 @@ export default {
     return {
       parkTypeMap,
       vehicleTypeMap,
-      //绑定车位列表高度
+      
+      companyList: [], // 公司列表数据
+      
       parkTableHeight: 0,
-      //绑定车位参数
       assignParkParm: {
         parkId: "",
         userId: "",
       },
-      //车位弹框属性
       parkDialog: {
         title: "",
         height: 400,
         width: 900,
         visible: false,
       },
-      //车位列表
       parkList: [],
-      //车位查询参数
       parkParms: {
         currentPage: 1,
         pageSize: 10,
@@ -277,23 +287,18 @@ export default {
         vehicleType: "",
         total: 0,
       },
-      //绑定房屋列表高度
       assignTableHeight: 0,
-      //绑定房屋提交的数据
       assignHoseParm: {
         houseId: "",
         userId: "",
       },
-      //绑定房屋弹框属性
       assignHouseDialog: {
         title: "",
         height: 400,
         width: 1050,
         visible: false,
       },
-      //房屋数据域
       houseList: [],
-      //获取房屋列表的参数
       houseParms: {
         buildNme: "",
         status: "0",
@@ -303,13 +308,8 @@ export default {
         pageSize: 10,
         total: 0,
       },
-      //表格的高度
       tableHeight: 0,
-      //业主列表
       tableList: [],
-      //角色列表
-      roleList: [],
-      //表单绑定数据源
       addModel: {
         editType: "",
         userId: "",
@@ -319,68 +319,38 @@ export default {
         loginName: "",
         password: "",
         status: "",
-        roleId: "",
+        companyId: "" // 公司ID
       },
-      //表单验证规则
       rules: {
         loginName: [
-          {
-            trigger: "change",
-            required: true,
-            message: "请填写姓名",
-          },
+          { trigger: "change", required: true, message: "请填写姓名" },
         ],
         phone: [
-          {
-            trigger: "change",
-            required: true,
-            message: "请填写电话",
-          },
+          { trigger: "change", required: true, message: "请填写电话" },
         ],
         sex: [
-          {
-            trigger: "change",
-            required: true,
-            message: "请选择性别",
-          },
+          { trigger: "change", required: true, message: "请选择性别" },
         ],
         username: [
-          {
-            trigger: "change",
-            required: true,
-            message: "请填写登录名",
-          },
+          { trigger: "change", required: true, message: "请填写登录名" },
         ],
         password: [
-          {
-            trigger: "change",
-            required: true,
-            message: "请填写登录密码",
-          },
+          { trigger: "change", required: true, message: "请填写登录密码" },
         ],
         status: [
-          {
-            trigger: "change",
-            required: true,
-            message: "请选择用户状态",
-          },
+          { trigger: "change", required: true, message: "请选择用户状态" },
         ],
-        roleId: [
-          {
-            trigger: "change",
-            required: true,
-            message: "请选择用户角色",
-          },
-        ],
+        // 动态必填验证
+        companyId: [
+          { trigger: "change", required: false, message: "请选择所属公司" }
+        ]
       },
-      //弹框属性
       addDialog: {
         title: "",
         height: 220,
         width: 620,
         visible: false,
       },
-      //参数
       parms: {
         loginName: "",
         phone: "",
@@ -391,17 +361,27 @@ export default {
     };
   },
   created() {
-    this.getRoleList();
     this.getList();
   },
   mounted() {
     this.$nextTick(() => {
       this.tableHeight = window.innerHeight - 210;
-      // this.assignTableHeight = window.innerHeight - 660;
-      // this.parkTableHeight = window.innerHeight - 660;
     });
+    // 如果是平台管理员，加载公司列表
+    if (this.isPlatformAdmin) {
+      this.getCompanyList();
+      this.rules.companyId[0].required = true; // 设为必填
+      this.addDialog.height = 280; // 调整弹窗高度
+    }
   },
   methods: {
+    // 获取公司列表
+    async getCompanyList() {
+      let res = await getCompanyListApi({ currentPage: 1, pageSize: 999 });
+      if (res && res.code == 200) {
+        this.companyList = res.data.records;
+      }
+    },
     //重置按钮
     resetBtn() {
       this.parms.loginName = "";
@@ -657,15 +637,6 @@ export default {
       this.parms.pageSize = val;
       this.getList();
     },
-    //获取角色列表
-    async getRoleList() {
-      let res = await getRoleListApi();
-      if (res && res.code == 200) {
-        console.log("角色列表");
-        console.log(res);
-        this.roleList = res.data;
-      }
-    },
     //弹框关闭
     onClose() {
       this.addDialog.visible = false;
@@ -703,6 +674,14 @@ export default {
     addBtn() {
       //清空表单
       this.$resetForm("addForm", this.addModel);
+      
+      // 重置公司ID
+      if(!this.isPlatformAdmin) {
+          this.addModel.companyId = ""; // 物业管理员自动后台填充
+      } else {
+          this.addModel.companyId = ""; // 平台管理员手动选择
+      }
+
       //设置编辑属性
       this.addModel.editType = "0";
       //设置弹框属性

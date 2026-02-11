@@ -1,6 +1,7 @@
 package com.itmk.web.park_list.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -22,4 +23,12 @@ public class ParkList implements Serializable {
     private String parkStatus;
     //序号
     private Long parkNum;
+
+    // 【新增】所属公司ID
+    @TableField("company_id")
+    private Long companyId;
+
+    // 【新增】所属公司名称 (用于列表显示)
+    @TableField(exist = false)
+    private String companyName;
 }

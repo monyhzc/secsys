@@ -4,20 +4,37 @@
 
 <mapper namespace="com.itmk.web.house_list.mapper.HouseListMapper">
     <select id="getList" resultType="com.itmk.web.house_list.entity.HouseList">
-        select hb.build_id,hb.`name`,hu.unit_name ,hl.*
-        from house_list as hl,house_unit as hu,house_building as hb
-        where  hl.unit_id = hu.unit_id  and hu.build_id = hb.build_id
-        <if test="buildNme != null and buildNme !=''">
-            and hb.name like concat('%',#{buildNme},'%')
-        </if>
-        <if test="unitName != null and unitName !=''">
-            and hu.unit_name like concat('%',#{unitName},'%')
-        </if>
-        <if test="houseNum != null and houseNum !=''">
-            and hl.house_num like concat('%',#{houseNum},'%')
-        </if>
-        <if test="status != null and status !=''">
-            and hl.status =#{status}
-        </if>
+        SELECT 
+            hb.build_id,
+            hb.`name`,
+            hu.unit_name,
+            hl.*,
+            c.company_name AS companyName
+        FROM 
+            house_list AS hl
+        LEFT JOIN 
+            house_unit AS hu ON hl.unit_id = hu.unit_id
+        LEFT JOIN 
+            house_building AS hb ON hu.build_id = hb.build_id
+        LEFT JOIN
+            sys_company AS c ON hl.company_id = c.company_id
+        <where>
+            <if test="parm.buildNme != null and parm.buildNme !=''">
+                AND hb.name LIKE CONCAT('%',#{parm.buildNme},'%')
+            </if>
+            <if test="parm.unitName != null and parm.unitName !=''">
+                AND hu.unit_name LIKE CONCAT('%',#{parm.unitName},'%')
+            </if>
+            <if test="parm.houseNum != null and parm.houseNum !=''">
+                AND hl.house_num LIKE CONCAT('%',#{parm.houseNum},'%')
+            </if>
+            <if test="parm.status != null and parm.status !=''">
+                AND hl.status = #{parm.status}
+            </if>
+            <if test="parm.companyId != null">
+                AND hl.company_id = #{parm.companyId}
+            </if>
+        </where>
+        ORDER BY hl.house_id DESC
     </select>
 </mapper>

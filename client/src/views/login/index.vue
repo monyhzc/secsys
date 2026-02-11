@@ -14,9 +14,12 @@
             <el-input type="password" v-model="loginForm.password" placeholder="请输入密码"></el-input>
           </el-form-item>
           <el-form-item prop="userType">
-            <el-radio-group v-model="loginForm.userType" class="custom-radio-group">
-              <el-radio :label="0" class="custom-radio">业主</el-radio>
-              <el-radio :label="1" class="custom-radio">管理员</el-radio>
+            <el-radio-group v-model="loginForm.userType" style="width: 100%;">
+              <el-row>
+                 <el-col :span="8"><el-radio :label="0">业主</el-radio></el-col>
+                 <el-col :span="8"><el-radio :label="1">物业</el-radio></el-col>
+                 <el-col :span="8"><el-radio :label="2">平台运营</el-radio></el-col>
+              </el-row>
             </el-radio-group>
           </el-form-item>
           <el-form-item>

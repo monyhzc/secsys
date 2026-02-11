@@ -29,6 +29,11 @@ jwt:
 itmk:
   loginUrl: /api/user/login
 
+#文件上传配置
+web:
+  upload-path: /app/upload/
+
+
 logging:
   pattern:
     console: '%d{yyyy-MM-dd} [%thread] %-5level %logger- %msg%n'

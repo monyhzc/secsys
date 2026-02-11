@@ -6,6 +6,9 @@ import com.itmk.web.house_building.entity.HouseBuilding;
 import com.itmk.web.house_building.entity.HouseBuildingParm;
 
 public interface HouseBuildingService extends IService<HouseBuilding> {
-    //列表查询
+    // 列表查询
     IPage<HouseBuilding> getList(HouseBuildingParm parm);
+
+    // 【新增】根据公司ID删除楼栋
+    void deleteByCompanyId(Long companyId);
 }

@@ -17,5 +17,5 @@ export async function editMenuApi(parm){
 }
 //删除权限
 export async function deleteMenuApi(parm){
-    return await http.delete("/api/menu",parm)
+    return await http.delete(`/api/menu/${parm.menuId}`)
 }

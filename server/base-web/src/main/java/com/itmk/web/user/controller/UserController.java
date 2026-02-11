@@ -2,6 +2,7 @@ package com.itmk.web.user.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itmk.config.jwt.JwtUtils;
 import com.itmk.utils.ResultUtils;
 import com.itmk.utils.ResultVo;
@@ -11,8 +12,8 @@ import com.itmk.web.menu.entity.MakeMenuTree;
 import com.itmk.web.menu.entity.Menu;
 import com.itmk.web.menu.entity.RouterVO;
 import com.itmk.web.menu.service.MenuService;
-import com.itmk.web.role_menu.service.RoleMenuService;
 import com.itmk.web.user.entity.*;
+import com.itmk.web.user.mapper.UserMapper; // 引入UserMapper以便调用自定义查询
 import com.itmk.web.user.service.UserService;
 import com.itmk.web.user_role.entity.UserRole;
 import io.jsonwebtoken.Claims;
@@ -26,7 +27,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -119,88 +119,68 @@ public class UserController {
     }
 
     /**
+     * 获取用户信息
+     */
+    @GetMapping("/getInfo")
+    public ResultVo getInfo(User user, HttpServletRequest request) {
+        String token = request.getHeader("token");
+        Claims claims = jwtUtils.getClaimsFromToken(token);
+        Object userType = claims.get("userType");
+
+        UserInfo userInfo = new UserInfo();
+        userInfo.setAvatar("https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
+
+        if (userType.equals("0")) { // 业主
+            LiveUser liveUser = liveUserService.getById(user.getUserId());
+            userInfo.setId(liveUser.getUserId());
+            userInfo.setName(liveUser.getUsername());
+            List<Menu> menuList = menuService.getMenuByUserIdForLiveUser(liveUser.getUserId());
+            List<String> collect = menuList.stream().map(Menu::getMenuCode).filter(code -> code != null).collect(Collectors.toList());
+            userInfo.setRoles(collect.toArray(new String[0]));
+        } else { // 管理员
+            User user1 = userService.getById(user.getUserId());
+            userInfo.setId(user1.getUserId());
+            userInfo.setName(user1.getUsername());
+            
+            // 【关键修复】设置 companyId，前端靠这个判断是否为平台管理员
+            userInfo.setCompanyId(user1.getCompanyId());
+
+            List<Menu> menuList = menuService.getMenuByUserId(user.getUserId());
+            List<String> collect = menuList.stream().map(Menu::getMenuCode).filter(code -> code != null).collect(Collectors.toList());
+            userInfo.setRoles(collect.toArray(new String[0]));
+        }
+        return ResultUtils.success("获取用户信息成功", userInfo);
+    }
+
+    /**
      * 获取菜单列表
      */
     @GetMapping("/getMenuList")
     public ResultVo getMenuList(HttpServletRequest request) {
-        //获取token
         String token = request.getHeader("token");
-        //获取用户名
         String username = jwtUtils.getUsernameFromToken(token);
-        //获取用户类型
         Claims claims = jwtUtils.getClaimsFromToken(token);
         Object userType = claims.get("userType");
-        if (userType.equals("0")) {//0：业主
-            //获取用户信息
+
+        if (userType.equals("0")) { // 业主
             LiveUser liveUser = liveUserService.loadUser(username);
-            //查询业主的权限信息
             List<Menu> menuList = menuService.getMenuByUserIdForLiveUser(liveUser.getUserId());
             List<Menu> collect = menuList.stream().filter(item -> item != null && !item.getType().equals("2")).collect(Collectors.toList());
-            //组装路由数据
-            List<RouterVO> routerVOS = MakeMenuTree.makeRouter(collect, 0L);
-            return ResultUtils.success("查询成功", routerVOS);
-        } else {
-            //获取用户信息
-            User liveUser = userService.loadUser(username);
-            //查询业主的权限信息
-            List<Menu> menuList = menuService.getMenuByUserId(liveUser.getUserId());
-            List<Menu> collect = menuList.stream().filter(item -> item != null && !item.getType().equals("2")).collect(Collectors.toList());
-            System.out.println("test-----------------");
-            for (Menu coll : collect) {
-                System.out.println(coll);
-            }
-            //组装路由数据
-            List<RouterVO> routerVOS = MakeMenuTree.makeRouter(collect, 0L);
-            System.out.println("test-----------------1");
-            for (RouterVO corll : routerVOS) {
-                System.out.println(corll);
-            }
-            return ResultUtils.success("查询成功", routerVOS);
-        }
-    }
-
-
-    /**
-     * 根据用户id
-     * 获取用户信息
-     */
-
-    @GetMapping("/getInfo")
-    public ResultVo getInfo(User user, HttpServletRequest request) {
-        //从头部获取token
-        String token = request.getHeader("token");
-        Claims claims = jwtUtils.getClaimsFromToken(token);
-        Object userType = claims.get("userType");
-        if (userType.equals("0")) { //0：业主
-            LiveUser liveUser = liveUserService.getById(user.getUserId());
-            UserInfo userInfo = new UserInfo();
-            userInfo.setId(liveUser.getUserId());
-            userInfo.setName(liveUser.getUsername());
-            userInfo.setAvatar("https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
-            //查询业主的权限信息
-            List<Menu> menuList = menuService.getMenuByUserIdForLiveUser(liveUser.getUserId());
-            //获取权限字段
-            List<String> collect = menuList.stream().filter(item -> item != null).map(item -> item.getMenuCode()).filter(item -> item != null).collect(Collectors.toList());
-            //转成数组
-            String[] strings = collect.toArray(new String[collect.size()]);
-            userInfo.setRoles(strings);
-            return ResultUtils.success("获取用户信息成功", userInfo);
-        } else { //物主
-            //根据用户id查询,区分查的是哪一个
-            User user1 = userService.getById(user.getUserId());
-            UserInfo userInfo = new UserInfo();
-            userInfo.setId(user1.getUserId());
-            userInfo.setName(user1.getUsername());
-            userInfo.setAvatar("https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
-            //根据用户id查询权限字段
-            //查询用户权限信息
+            return ResultUtils.success("查询成功", MakeMenuTree.makeRouter(collect, 0L));
+        } else { // 管理员
+            User user = userService.loadUser(username);
             List<Menu> menuList = menuService.getMenuByUserId(user.getUserId());
-            //获取权限字段
-            List<String> collect = menuList.stream().filter(item -> item != null).map(item -> item.getMenuCode()).filter(item -> item != null).collect(Collectors.toList());
-            //转成数组
-            String[] strings = collect.toArray(new String[collect.size()]);
-            userInfo.setRoles(strings);
-            return ResultUtils.success("获取用户信息成功", userInfo);
+            List<Menu> collect = menuList.stream().filter(item -> item != null && !item.getType().equals("2")).collect(Collectors.toList());
+
+            // 【关键修复】如果是普通物业管理员(companyId不为空)，强制移除"公司管理"菜单
+            // 假设 "公司管理" 的 menuCode 是 "sys:companyList"
+            if (user.getCompanyId() != null) {
+                collect = collect.stream()
+                        .filter(item -> item.getMenuCode() == null || !item.getMenuCode().equals("sys:companyList"))
+                        .collect(Collectors.toList());
+            }
+
+            return ResultUtils.success("查询成功", MakeMenuTree.makeRouter(collect, 0L));
         }
     }
 
@@ -238,14 +218,14 @@ public class UserController {
             result.setToken(token);
             result.setExpireTime(time);
 
-            System.out.println(ResultUtils.success("登录成功", result)+"-------------------");
+            System.out.println(ResultUtils.success("登录成功", result) + "-------------------");
             return ResultUtils.success("登录成功", result);
         }
     }
 
     /**
      * 新增员工
-     *
+     * 【修改】：增加公司ID的自动填充与校验，以及角色关联的保存
      * @param user
      * @return
      */
@@ -261,13 +241,41 @@ public class UserController {
                 return ResultUtils.error("登录名已经被占用!", 500);
             }
         }
+
+        // --- 新增逻辑：处理公司归属 ---
+        // 获取当前操作员信息
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        
+        if (currentUser.getCompanyId() != null) {
+            // 1. 如果是普通物业管理员，强制新增的员工属于当前公司
+            user.setCompanyId(currentUser.getCompanyId());
+        } else {
+            // 2. 如果是平台管理员，校验是否选择了公司
+            if (user.getCompanyId() == null) {
+                return ResultUtils.error("平台管理员新增员工时，必须选择所属物业公司!");
+            }
+        }
+        // ---------------------------
+
         //如果密码存在，MD5加密
         if (StringUtils.isNotEmpty(user.getPassword())) {
-//            user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
             user.setPassword(passwordEncoder.encode(user.getPassword()));
+        } else {
+            // 默认密码
+            user.setPassword(passwordEncoder.encode("666666"));
         }
         boolean save = userService.save(user);
         if (save) {
+            // --- 新增代码 Start: 保存员工角色关联 ---
+            //【修改点】：保存用户成功后，如果有角色ID，则保存用户角色关系
+            if (user.getRoleId() != null) {
+                UserRole userRole = new UserRole();
+                userRole.setUserId(user.getUserId());
+                userRole.setRoleId(user.getRoleId());
+                userService.saveRole(userRole);
+            }
+            // --- 新增代码 End ---
             return ResultUtils.success("新增员工成功");
         }
         return ResultUtils.error("新增员工失败");
@@ -287,13 +295,12 @@ public class UserController {
             QueryWrapper<User> query = new QueryWrapper<>();
             query.lambda().eq(User::getUsername, user.getUsername());
             User one = userService.getOne(query);
-            if (one != null && one.getUserId() != user.getUserId()) {
+            if (one != null && !one.getUserId().equals(user.getUserId())) {
                 return ResultUtils.error("登录名已经被占用!", 500);
             }
         }
         //如果密码存在，MD5加密
         if (StringUtils.isNotEmpty(user.getPassword())) {
-//            user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
         boolean b = userService.updateById(user);
@@ -321,26 +328,41 @@ public class UserController {
 
     /**
      * 查询员工列表
-     *
+     * 【修改】：改为调用 Mapper 的关联查询，并增加数据权限隔离
      * @param parm
      * @return
      */
     @GetMapping("/list")
     public ResultVo list(UserParm parm) {
-        // 数据隔离手动处理：如果当前用户有公司ID，则只能查询该公司下的员工
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            User currentUser = (User) authentication.getPrincipal();
-            if (currentUser.getCompanyId() != null) {
-                // 这里的 list 逻辑需要修改，原 service.list(parm) 可能构造了 QueryWrapper
-                // 我们需要深入 service 看看，或者在这里直接 set 到 parm 中 (假设 UserParm 有 companyId 字段或者通用扩展)
-                // 暂时假设 UserParm 没有，我们需要看看 UserService.list(parm) 的实现
+        try {
+            // 构造分页对象
+            IPage<User> page = new Page<>(parm.getCurrentPage(), parm.getPageSize());
+            
+            // 数据权限隔离ID，默认为null（查所有）
+            Long dataScopeCompanyId = null;
+
+            // 获取当前登录用户信息
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof User) {
+                User currentUser = (User) authentication.getPrincipal();
+                // 如果有公司ID，说明是物业管理员，只能查自己公司
+                if (currentUser.getCompanyId() != null) {
+                    dataScopeCompanyId = currentUser.getCompanyId();
+                }
             }
+
+            // 调用自定义 Mapper 方法 (UserMapper.xml 中定义的 LEFT JOIN 查询)
+            // 注意：这里将 BaseMapper 强转为 UserMapper 接口
+            UserMapper userMapper = (UserMapper) userService.getBaseMapper();
+            IPage<User> list = userMapper.getList(page, parm, dataScopeCompanyId);
+
+            //前端不展示密码
+            list.getRecords().stream().forEach(item -> item.setPassword(""));
+            return ResultUtils.success("查询成功", list);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultUtils.error("查询失败：" + e.getMessage());
         }
-        IPage<User> list = userService.list(parm);
-        //前端不展示密码
-        list.getRecords().stream().forEach(item -> item.setPassword(""));
-        return ResultUtils.success("查询成功", list);
     }
 
     /**

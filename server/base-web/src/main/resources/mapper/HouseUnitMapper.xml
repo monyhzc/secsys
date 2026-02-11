@@ -4,14 +4,27 @@
 
 <mapper namespace="com.itmk.web.house_unit.mapper.HouseUnitMapper">
     <select id="getList" resultType="com.itmk.web.house_unit.entity.HouseUnit">
-        select hu.*,hb.`name`
-        from house_unit as hu,house_building as hb
-        where hb.build_id = hu.build_id
-        <if test="unitName !=null and unitName !=''">
-            and hu.unit_name like concat('%',#{unitName},'%')
-        </if>
-        <if test="buildNme !=null and buildNme !=''">
-            and hb.name like concat('%',#{buildNme},'%')
-        </if>
+        SELECT 
+            hu.*,
+            hb.name,
+            c.company_name AS companyName
+        FROM 
+            house_unit hu
+        LEFT JOIN 
+            house_building hb ON hu.build_id = hb.build_id
+        LEFT JOIN
+            sys_company c ON hu.company_id = c.company_id
+        <where>
+            <if test="parm.unitName != null and parm.unitName != ''">
+                AND hu.unit_name LIKE CONCAT('%', #{parm.unitName}, '%')
+            </if>
+            <if test="parm.buildNme != null and parm.buildNme != ''">
+                AND hb.name LIKE CONCAT('%', #{parm.buildNme}, '%')
+            </if>
+            <if test="parm.companyId != null">
+                AND hu.company_id = #{parm.companyId}
+            </if>
+        </where>
+        ORDER BY hu.unit_id DESC
     </select>
 </mapper>

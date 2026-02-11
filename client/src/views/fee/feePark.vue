@@ -252,16 +252,6 @@ export default {
       this.parms.pageSize = val;
       this.getList();
     },
-    async getList() {
-      let res = await getListApi(this.parms);
-      if (res && res.code == 200) {
-        console.log("列表");
-        console.log(res);
-        //赋值到列表
-        this.parkList = res.data.records;
-        this.parms.total = res.data.total;
-      }
-    },
     //缴费按钮
     async payBtn(row) {
       console.log(row);

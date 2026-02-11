@@ -15,7 +15,7 @@ export async function editUserApi(parm){
 }
 //删除员工
 export async function deleteUserApi(parm){
-  return await http.delete("/api/user",parm);
+  return await http.delete(`/api/user/${parm.userId}`);
 }
 
 //从自己的后端获取登录数据，返回token和用户id

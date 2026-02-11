@@ -46,18 +46,15 @@ public class CompanyTenantHandler implements TenantLineHandler {
         }
 
         // 需要进行隔离的表
+        if ("sys_role".equalsIgnoreCase(tableName)) return true;
         if ("house_list".equalsIgnoreCase(tableName)) return false;
-        if ("sys_role".equalsIgnoreCase(tableName)) return false;
         if ("house_building".equalsIgnoreCase(tableName)) return false;
         if ("house_unit".equalsIgnoreCase(tableName)) return false;
         if ("parking_list".equalsIgnoreCase(tableName)) return false;
         if ("live_user".equalsIgnoreCase(tableName)) return false;
         if ("sys_notice".equalsIgnoreCase(tableName)) return false;
-        if ("user_complaint".equalsIgnoreCase(tableName)) return false;
-        if ("user_repair".equalsIgnoreCase(tableName)) return false;
+        if ("work_order".equalsIgnoreCase(tableName)) return false;
         if ("fee_park".equalsIgnoreCase(tableName)) return false;
-        if ("fee_power".equalsIgnoreCase(tableName)) return false;
-        if ("fee_water".equalsIgnoreCase(tableName)) return false;
         if ("live_house".equalsIgnoreCase(tableName)) return false;
         if ("live_park".equalsIgnoreCase(tableName)) return false;
 

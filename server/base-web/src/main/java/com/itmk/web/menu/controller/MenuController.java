@@ -63,7 +63,12 @@ public class MenuController {
     //查询树形表格数据
     @GetMapping("/list")
     public ResultVo getList(){
-        List<Menu> list = menuService.getList();
-        return ResultUtils.success("查询成功",list);
+        try {
+            List<Menu> list = menuService.getList();
+            return ResultUtils.success("查询成功", list);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultUtils.error("查询失败：" + e.getMessage());
+        }
     }
 }

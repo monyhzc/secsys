@@ -1,14 +1,20 @@
 <!-- 系统对话弹框 --编辑显示弹框    -->
 
 <template>
-  <el-dialog append-to-body top="1vh" :title="title" :visible.sync="visible" :width="width + 'px'"
+  <el-dialog
+    append-to-body
+    :close-on-click-modal="false"
+    top="1vh"
+    :title="title"
+    :visible.sync="visible"
+    :width="width + 'px'"
     :before-close="onClose">
     <div class="container" :style="{ height: height + 'px' }">
       <slot name="content"></slot>
     </div>
     <span slot="footer">
-      <el-button type="danger" @click="onClose">取消</el-button>
-      <el-button type="primary" @click="onConfirm">确认</el-button>
+      <el-button size="small" type="danger" @click="onClose">取消</el-button>
+      <el-button size="small" type="primary" @click="onConfirm">确认</el-button>
     </span>
   </el-dialog>
 </template>
@@ -35,6 +41,10 @@ export default {
   },
   methods: {
     onClose() {
+      // 解决 aria-hidden 报错：关闭前强制让当前焦点失效
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
       this.$emit("onClose");
     },
     onConfirm() {

@@ -10,4 +10,7 @@ public class RoleParm {
     private Long currentPage;
     //角色名称
     private String roleName;
+
+    // 【新增】用于数据权限过滤
+    private Long companyId;
 }

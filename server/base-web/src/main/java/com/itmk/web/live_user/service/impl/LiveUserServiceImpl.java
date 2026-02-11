@@ -2,9 +2,8 @@ package com.itmk.web.live_user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.itmk.web.house_list.entity.HouseList;
-import com.itmk.web.house_list.mapper.HouseListMapper;
 import com.itmk.web.live_house.entity.LiveHouse;
 import com.itmk.web.live_house.mapper.LiveHouseMapper;
 import com.itmk.web.live_park.entity.LivePark;
@@ -13,140 +12,156 @@ import com.itmk.web.live_role.entity.LiveRole;
 import com.itmk.web.live_role.mapper.LiveRoleMapper;
 import com.itmk.web.live_user.entity.AssignHouseParm;
 import com.itmk.web.live_user.entity.LiveUser;
+import com.itmk.web.live_user.entity.LiveUserParm;
 import com.itmk.web.live_user.mapper.LiveUserMapper;
 import com.itmk.web.live_user.service.LiveUserService;
-import com.itmk.web.park_list.entity.ParkList;
-import com.itmk.web.park_list.mapper.ParkListMapper;
+import com.itmk.web.user.entity.User;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LiveUserServiceImpl extends ServiceImpl<LiveUserMapper, LiveUser> implements LiveUserService {
-    @Resource
-    private LiveRoleMapper liveRoleMapper;
 
     @Resource
     private LiveHouseMapper liveHouseMapper;
-
-    @Resource
-    private HouseListMapper houseListMapper;
-
     @Resource
     private LiveParkMapper liveParkMapper;
-
     @Resource
-    private ParkListMapper parkListMapper;
+    private LiveRoleMapper liveRoleMapper;
 
     @Override
-    @Transactional
+    public IPage<LiveUser> getList(LiveUserParm parm) {
+        // 1. 构造分页对象
+        IPage<LiveUser> page = new Page<>();
+        page.setSize(parm.getPageSize());
+        page.setCurrent(parm.getCurrentPage());
+
+        // 2. 权限隔离：获取当前登录用户的 CompanyId
+        Long companyId = null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            if (currentUser.getCompanyId() != null) {
+                companyId = currentUser.getCompanyId();
+            }
+        }
+
+        // 3. 调用自定义 Mapper 方法
+        return this.baseMapper.getList(page, parm.getLoginName(), parm.getPhone(), companyId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void saveLiveUser(LiveUser liveUser) {
-        //1.保存业主信息
+        // 保存业主基本信息
         this.baseMapper.insert(liveUser);
-        //2.维护角色信息
-        LiveRole userRole = new LiveRole();
-        userRole.setRoleId(liveUser.getRoleId());
-        userRole.setUserId(liveUser.getUserId());
-        liveRoleMapper.insert(userRole);
+        
+        // 可以在这里添加默认角色的逻辑，如果业务需要的话
+        // LiveRole role = new LiveRole();
+        // role.setUserId(liveUser.getUserId());
+        // role.setRoleId(defaultRoleId);
+        // liveRoleMapper.insert(role);
     }
 
     @Override
-    public IPage<LiveUser> getList(IPage<LiveUser> page, String userName, String phone) {
-        return this.baseMapper.getList(page,userName,phone);
-    }
-
-    @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void editLiveUser(LiveUser liveUser) {
-        //1.更新业主表
+        // 更新业主信息
         this.baseMapper.updateById(liveUser);
-        //2.角色关联表的数据删除
-        QueryWrapper<LiveRole> query = new QueryWrapper<>();
-        query.lambda().eq(LiveRole::getUserId,liveUser.getUserId());
-        liveRoleMapper.delete(query);
-        //3.插入新的角色
-        LiveRole liveRole = new LiveRole();
-        liveRole.setRoleId(liveUser.getRoleId());
-        liveRole.setUserId(liveUser.getUserId());
-        liveRoleMapper.insert(liveRole);
     }
 
     @Override
     public LiveUser getUser(Long userId) {
+        // 调用 Mapper 自定义查询，关联查询角色信息
         return this.baseMapper.getUser(userId);
     }
 
     @Override
-    @Transactional
-    public void assignHouse(AssignHouseParm parm) {
-        //保存到租户和房屋的关系表
-        LiveHouse liveHouse = new LiveHouse();
-        liveHouse.setHouseId(parm.getHouseId());
-        liveHouse.setUserId(parm.getUserId());
-        liveHouse.setUseStatus("0");
-        liveHouseMapper.insert(liveHouse);
-        //更改房屋的使用状态
-        HouseList house = new HouseList();
-        house.setHouseId(parm.getHouseId());
-        house.setStatus("1");
-        houseListMapper.updateById(house);
+    @Transactional(rollbackFor = Exception.class)
+    public void saveHouse(AssignHouseParm parm) {
+        // 先删除旧数据
+        QueryWrapper<LiveHouse> query = new QueryWrapper<>();
+        query.lambda().eq(LiveHouse::getUserId, parm.getUserId());
+        liveHouseMapper.delete(query);
+        // 保存新数据
+        if (parm.getList() != null && parm.getList().size() > 0) {
+            LiveHouse liveHouse = new LiveHouse();
+            liveHouse.setUserId(parm.getUserId());
+            liveHouse.setHouseId(parm.getList().get(0)); // 1对1分配
+            liveHouse.setUseStatus("1");
+            liveHouseMapper.insert(liveHouse);
+        }
     }
 
     @Override
-    public void assignSavePark(LivePark livePark) {
-        //1.把数据存储到租户和车位的关系表里面
-        livePark.setLiveStatue("0");
-        liveParkMapper.insert(livePark);
-        //2.把车位表的状态改为已使用
-        ParkList parkList = new ParkList();
-        parkList.setParkId(livePark.getParkId());
-        parkList.setParkStatus("1");
-        parkListMapper.updateById(parkList);
-    }
-
-    @Override
-    @Transactional
-    public void returnHouse(AssignHouseParm parm) {
-        //更新租户和房屋关系表状态为解绑；
-        LiveHouse liveHouse = new LiveHouse();
-        liveHouse.setUseStatus("1");
-        QueryWrapper<LiveHouse> queryWrapper = new QueryWrapper<>();
-        queryWrapper.lambda().eq(LiveHouse::getHouseId,parm.getHouseId())
-                .eq(LiveHouse::getUserId,parm.getUserId())
-        .eq(LiveHouse::getUseStatus,"0");
-        liveHouseMapper.update(liveHouse,queryWrapper);
-        //更新房屋表的使用状态为未使用；
-        HouseList houseList = new HouseList();
-        houseList.setStatus("0");
-        QueryWrapper<HouseList> query = new QueryWrapper<>();
-        query.lambda().eq(HouseList::getHouseId,parm.getHouseId());
-        houseListMapper.update(houseList,query);
-    }
-
-    @Override
-    @Transactional
-    public void returnPark(LivePark livePark) {
-        //2.更新租户和车位的关系为解绑；
+    @Transactional(rollbackFor = Exception.class)
+    public void savePark(AssignHouseParm parm) {
+        // 先删除旧数据
         QueryWrapper<LivePark> query = new QueryWrapper<>();
-        query.lambda().eq(LivePark::getParkId,livePark.getParkId())
-                .eq(LivePark::getUserId,livePark.getUserId())
-        .eq(LivePark::getLiveStatue,"0");
-        LivePark nLivepark = new LivePark();
-        nLivepark.setLiveStatue("1");
-        liveParkMapper.update(nLivepark,query);
-       // 3.更新车位的使用状态为未使用；
-        ParkList parkList = new ParkList();
-        parkList.setParkStatus("0");
-        parkList.setParkId(livePark.getParkId());
-        parkListMapper.updateById(parkList);
+        query.lambda().eq(LivePark::getUserId, parm.getUserId());
+        liveParkMapper.delete(query);
+        // 保存新数据
+        if (parm.getList() != null && parm.getList().size() > 0) {
+            LivePark livePark = new LivePark();
+            livePark.setUserId(parm.getUserId());
+            livePark.setParkId(parm.getList().get(0));
+            livePark.setLiveStatue("1");
+            liveParkMapper.insert(livePark);
+        }
+    }
+
+    @Override
+    public AssignHouseParm getHouseByUserId(AssignHouseParm parm) {
+        QueryWrapper<LiveHouse> query = new QueryWrapper<>();
+        query.lambda().eq(LiveHouse::getUserId, parm.getUserId());
+        LiveHouse liveHouse = liveHouseMapper.selectOne(query);
+        if (liveHouse != null) {
+            parm.setHouseId(liveHouse.getHouseId());
+        }
+        return parm;
+    }
+
+    @Override
+    public AssignHouseParm getParkByUserId(AssignHouseParm parm) {
+        QueryWrapper<LivePark> query = new QueryWrapper<>();
+        query.lambda().eq(LivePark::getUserId, parm.getUserId());
+        LivePark livePark = liveParkMapper.selectOne(query);
+        if (livePark != null) {
+            parm.setParkId(livePark.getParkId());
+        }
+        return parm;
     }
 
     @Override
     public LiveUser loadUser(String username) {
-        //构造查询条件
         QueryWrapper<LiveUser> query = new QueryWrapper<>();
-        query.lambda().eq(LiveUser::getUsername,username);
+        query.lambda().eq(LiveUser::getUsername, username);
         return this.baseMapper.selectOne(query);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteByCompanyId(Long companyId) {
+        QueryWrapper<LiveUser> query = new QueryWrapper<>();
+        query.lambda().eq(LiveUser::getCompanyId, companyId);
+        List<LiveUser> userList = this.list(query);
+
+        if (userList != null && !userList.isEmpty()) {
+            List<Long> userIds = userList.stream().map(LiveUser::getUserId).collect(Collectors.toList());
+
+            // 删除 live_role
+            QueryWrapper<LiveRole> roleQuery = new QueryWrapper<>();
+            roleQuery.lambda().in(LiveRole::getUserId, userIds);
+            liveRoleMapper.delete(roleQuery);
+
+            // 删除业主账号
+            this.remove(query);
+        }
     }
 }

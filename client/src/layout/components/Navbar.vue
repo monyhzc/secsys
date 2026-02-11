@@ -110,7 +110,7 @@ export default {
     //重置密码
     async resetPassword() {
       //信息提示
-      let confirm = await this.$myconfirm("确定重置密吗？");
+      let confirm = await this.$myconfirm("确定重置密码吗？");
       if (confirm) {
         this.dialog.visible = true;
       }

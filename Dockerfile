@@ -6,7 +6,10 @@
 FROM node:16-alpine AS client-build
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm ci && chmod +x node_modules/.bin/*
+# 仅保留国内镜像源加速，不进行缓存挂载
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm i && \
+    chmod +x node_modules/.bin/*
 COPY client .
 RUN npm run build:prod
 

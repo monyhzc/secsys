@@ -10,4 +10,7 @@ public class ParkListParm {
     private String parkStatus;
     private String parkType;
     private String vehicleType;
+    
+    // 【新增】数据权限过滤字段
+    private Long companyId;
 }

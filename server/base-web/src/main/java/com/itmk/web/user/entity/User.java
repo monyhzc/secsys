@@ -14,11 +14,11 @@ import java.util.Collection;
 /**
  * 员工表
  */
-@Data  //自动生成get 和 set方法
-@TableName("sys_user")  //指明User对应的数据库表是 sys_user表
-public class User implements UserDetails,Serializable {
+@Data
+@TableName("sys_user")
+public class User implements UserDetails, Serializable {
     //设置主键自增
-    @TableId(type= IdType.AUTO)
+    @TableId(type = IdType.AUTO)
     private Long userId;
     //姓名
     private String loginName;
@@ -38,20 +38,27 @@ public class User implements UserDetails,Serializable {
     private String status;
     //0：启用 1：禁用
     private String isUsed;
+    
     //所属物业公司ID
     @TableField("company_id")
     private Long companyId;
 
-    //下面的字段，属于spring security的UserDetails的字段
-    //帐户是否过期(1 未过期，0已过期)
-    private boolean isAccountNonExpired = true;
-    //帐户是否被锁定(1 未锁定，0已锁定)
-    private boolean isAccountNonLocked = true;
-    //密码是否过期(1 未过期，0已过期)
-    private boolean isCredentialsNonExpired = true;
-    //帐户是否可用(1 可用，0 删除用户)
-    private boolean isEnabled = true;
-    //由于authorities不是数据库里面的字段，所以要排除他，不然mybatis-plus找不到该字段会报错
     @TableField(exist = false)
-    Collection<? extends GrantedAuthority> authorities;
+    private Long roleId;
+    
+    //用于列表显示公司名称，exist = false 表示该字段不属于 sys_user 表
+    @TableField(exist = false)
+    private String companyName;
+
+    //Spring Security 字段
+    @TableField(exist = false)
+    private Collection<? extends GrantedAuthority> authorities;
+    @TableField(exist = false)
+    private boolean isAccountNonExpired = true;
+    @TableField(exist = false)
+    private boolean isAccountNonLocked = true;
+    @TableField(exist = false)
+    private boolean isCredentialsNonExpired = true;
+    @TableField(exist = false)
+    private boolean isEnabled = true;
 }

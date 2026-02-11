@@ -4,4 +4,26 @@
 
 <mapper namespace="com.itmk.web.house_building.mapper.HouseBuildingMapper">
 
+    <select id="getList" resultType="com.itmk.web.house_building.entity.HouseBuilding">
+        SELECT 
+            b.*,
+            c.company_name AS companyName
+        FROM 
+            house_building b
+        LEFT JOIN 
+            sys_company c ON b.company_id = c.company_id
+        <where>
+            <if test="parm.name != null and parm.name != ''">
+                AND b.name LIKE CONCAT('%', #{parm.name}, '%')
+            </if>
+            <if test="parm.type != null and parm.type != ''">
+                AND b.type = #{parm.type}
+            </if>
+            <if test="parm.companyId != null">
+                AND b.company_id = #{parm.companyId}
+            </if>
+        </where>
+        ORDER BY b.order_num ASC
+    </select>
+
 </mapper>

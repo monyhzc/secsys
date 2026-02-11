@@ -4,4 +4,26 @@
 
 <mapper namespace="com.itmk.web.user.mapper.UserMapper">
 
+    <select id="getList" resultType="com.itmk.web.user.entity.User">
+        SELECT
+            u.*,
+            c.company_name AS companyName
+        FROM
+            sys_user u
+        LEFT JOIN
+            sys_company c ON u.company_id = c.company_id
+        <where>
+            <if test="parm.loginName != null and parm.loginName != ''">
+                AND u.login_name LIKE CONCAT('%', #{parm.loginName}, '%')
+            </if>
+            <if test="parm.phone != null and parm.phone != ''">
+                AND u.phone LIKE CONCAT('%', #{parm.phone}, '%')
+            </if>
+            <if test="dataScopeCompanyId != null">
+                AND u.company_id = #{dataScopeCompanyId}
+            </if>
+        </where>
+        ORDER BY u.user_id DESC
+    </select>
+
 </mapper>

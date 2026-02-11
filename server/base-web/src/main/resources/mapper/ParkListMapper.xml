@@ -4,4 +4,30 @@
 
 <mapper namespace="com.itmk.web.park_list.mapper.ParkListMapper">
 
+    <select id="getList" resultType="com.itmk.web.park_list.entity.ParkList">
+        SELECT 
+            p.*,
+            c.company_name AS companyName
+        FROM 
+            parking_list p
+        LEFT JOIN 
+            sys_company c ON p.company_id = c.company_id
+        <where>
+            <if test="parm.parkName != null and parm.parkName != ''">
+                AND p.park_name LIKE CONCAT('%', #{parm.parkName}, '%')
+            </if>
+            <if test="parm.parkStatus != null and parm.parkStatus != ''">
+                AND p.park_status = #{parm.parkStatus}
+            </if>
+            <if test="parm.parkType != null and parm.parkType != ''">
+                AND p.park_type = #{parm.parkType}
+            </if>
+            
+            <if test="parm.companyId != null">
+                AND p.company_id = #{parm.companyId}
+            </if>
+        </where>
+        ORDER BY p.park_num ASC
+    </select>
+
 </mapper>

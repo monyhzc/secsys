@@ -1,6 +1,7 @@
 package com.itmk.web.house_building.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -21,4 +22,12 @@ public class HouseBuilding implements Serializable {
     private String name;
     //序号
     private Long orderNum;
+
+    // 【新增】所属公司ID
+    @TableField("company_id")
+    private Long companyId;
+
+    // 【新增】所属公司名称 (用于列表显示)
+    @TableField(exist = false)
+    private String companyName;
 }
