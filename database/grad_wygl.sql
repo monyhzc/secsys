@@ -623,6 +623,46 @@ INSERT INTO `live_user` VALUES (50, 'shenjiayue', '13154026218', '1', '沈嘉悦
 INSERT INTO `live_user` VALUES (51, 'wangwu', '13', '0', '王五', '$2a$10$HctMmCYnMmYhzA4GxK4dVe5mJ113uSApkDsZSbEpMO4eFAWEg9fxm', '0', 1, 1, 1, 1, 1);
 
 -- ----------------------------
+-- Table structure for fee_property_rule
+-- ----------------------------
+DROP TABLE IF EXISTS `fee_property_rule`;
+CREATE TABLE `fee_property_rule`  (
+  `rule_id` int NOT NULL AUTO_INCREMENT COMMENT '规则id',
+  `company_id` int NULL DEFAULT NULL COMMENT '公司id',
+  `rule_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '规则名称',
+  `price_per_square` decimal(18, 2) NULL DEFAULT NULL COMMENT '每平米价格',
+  `late_fee_rate` decimal(18, 4) NULL DEFAULT NULL COMMENT '滞纳金费率',
+  `late_fee_days` int NULL DEFAULT NULL COMMENT '滞纳天数',
+  `status` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '0:禁用 1：启用',
+  PRIMARY KEY (`rule_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of fee_property_rule
+-- ----------------------------
+INSERT INTO `fee_property_rule` VALUES (1, 1, '默认物业费规则', 2.50, 0.001, 30, '1');
+
+-- ----------------------------
+-- Table structure for fee_property
+-- ----------------------------
+DROP TABLE IF EXISTS `fee_property`;
+CREATE TABLE `fee_property`  (
+  `property_fee_id` int NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id` int NULL DEFAULT NULL COMMENT '业主id',
+  `company_id` int NULL DEFAULT NULL COMMENT '公司id',
+  `house_id` int NULL DEFAULT NULL COMMENT '房屋id',
+  `rule_id` int NULL DEFAULT NULL COMMENT '规则id',
+  `pay_property_month` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '缴费年月',
+  `house_area` decimal(18, 2) NULL DEFAULT NULL COMMENT '房屋面积',
+  `base_money` decimal(18, 2) NULL DEFAULT NULL COMMENT '基础物业费',
+  `late_fee` decimal(18, 2) NULL DEFAULT NULL COMMENT '滞纳金',
+  `total_money` decimal(18, 2) NULL DEFAULT NULL COMMENT '总金额',
+  `pay_property_status` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT '0:未缴费  1：已缴费',
+  `pay_property_time` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`property_fee_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
 -- Table structure for parking_list
 -- ----------------------------
 DROP TABLE IF EXISTS `parking_list`;
@@ -758,6 +798,7 @@ INSERT INTO `sys_menu` VALUES (43, 0, '收费管理', 'sys:fee', '', '/fee', '',
 INSERT INTO `sys_menu` VALUES (44, 43, '电费管理', 'sys:feePower', 'feePower', '/feePower', '/fee/feePower', '1', 'el-icon-picture', 1, '', '收费管理');
 INSERT INTO `sys_menu` VALUES (45, 43, '水费管理', 'sys:feeWater', 'feeWater', '/feeWater', '/fee/feeWater', '1', 'el-icon-s-data', 2, '', '收费管理');
 INSERT INTO `sys_menu` VALUES (46, 43, '停车管理', 'sys:feePark', 'feePark', '/feePark', '/fee/feePark', '1', 'el-icon-s-order', 3, '', '收费管理');
+INSERT INTO `sys_menu` VALUES (94, 43, '物业费管理', 'sys:feeProperty', 'feeProperty', '/feeProperty', '/fee/feeProperty', '1', 'el-icon-s-finance', 4, '', '收费管理');
 INSERT INTO `sys_menu` VALUES (47, 44, '新增', 'sys:feePower:add', '', '', '', '2', '', 1, '', '电费管理');
 INSERT INTO `sys_menu` VALUES (48, 44, '编辑', 'sys:feePower:edit', '', '', '', '2', '', 2, '', '电费管理');
 INSERT INTO `sys_menu` VALUES (49, 44, '删除', 'sys:feePower:delete', '', '', '', '2', '', 3, '', '电费管理');
@@ -797,10 +838,15 @@ INSERT INTO `sys_menu` VALUES (80, 57, '处理', 'sys:myUserComplaint:do', '', '
 INSERT INTO `sys_menu` VALUES (81, 44, '缴费', 'sys:feePower:pay', '', '', '', '2', '', 4, '', '电费管理');
 INSERT INTO `sys_menu` VALUES (82, 46, '缴费', 'sys:feePark:pay', '', '', '', '2', '', 4, '', '停车管理');
 INSERT INTO `sys_menu` VALUES (83, 45, '缴费', 'sys:feeWater:pay', '', '', '', '2', '', 4, '', '水费管理');
+INSERT INTO `sys_menu` VALUES (95, 94, '新增', 'sys:feeProperty:add', '', '', '', '2', '', 1, '', '物业费管理');
+INSERT INTO `sys_menu` VALUES (96, 94, '编辑', 'sys:feeProperty:edit', '', '', '', '2', '', 2, '', '物业费管理');
+INSERT INTO `sys_menu` VALUES (97, 94, '删除', 'sys:feeProperty:delete', '', '', '', '2', '', 3, '', '物业费管理');
+INSERT INTO `sys_menu` VALUES (98, 94, '缴费', 'sys:feeProperty:pay', '', '', '', '2', '', 4, '', '物业费管理');
 INSERT INTO `sys_menu` VALUES (84, 0, '缴费记录', 'sys:feeList', '', '/feeList', '', '0', 'el-icon-c-scale-to-original', 6, '', '顶级菜单');
 INSERT INTO `sys_menu` VALUES (85, 84, '我的电费', 'sys:myPowerFee', 'myPowerFee', '/myPowerFee', '/feeList/myPowerFee', '1', 'el-icon-date', 1, '', '缴费记录');
 INSERT INTO `sys_menu` VALUES (86, 84, '我的水费', 'sys:myWaterFee', 'myWaterFee', '/myWaterFee', '/feeList/myWaterFee', '1', 'el-icon-s-shop', 2, '', '缴费记录');
 INSERT INTO `sys_menu` VALUES (87, 84, '我的停车费', 'sys:myParkFee', 'myParkFee', '/myParkFee', '/feeList/myParkFee', '1', 'el-icon-s-finance', 3, '', '缴费记录');
+INSERT INTO `sys_menu` VALUES (99, 84, '我的物业费', 'sys:myPropertyFee', 'myPropertyFee', '/myPropertyFee', '/feeList/myPropertyFee', '1', 'el-icon-s-finance', 4, '', '缴费记录');
 
 -- ----------------------------
 -- Table structure for sys_notice
@@ -937,6 +983,11 @@ INSERT INTO `sys_role_menu` VALUES (1357, 5, 60);
 INSERT INTO `sys_role_menu` VALUES (1358, 5, 61);
 INSERT INTO `sys_role_menu` VALUES (1359, 5, 92);
 INSERT INTO `sys_role_menu` VALUES (1360, 5, 93);
+INSERT INTO `sys_role_menu` VALUES (1550, 5, 94);
+INSERT INTO `sys_role_menu` VALUES (1551, 5, 95);
+INSERT INTO `sys_role_menu` VALUES (1552, 5, 96);
+INSERT INTO `sys_role_menu` VALUES (1553, 5, 97);
+INSERT INTO `sys_role_menu` VALUES (1554, 5, 98);
 INSERT INTO `sys_role_menu` VALUES (1419, 9, 66);
 INSERT INTO `sys_role_menu` VALUES (1420, 9, 79);
 INSERT INTO `sys_role_menu` VALUES (1421, 9, 76);
@@ -969,6 +1020,9 @@ INSERT INTO `sys_role_menu` VALUES (1496, 8, 56);
 INSERT INTO `sys_role_menu` VALUES (1497, 8, 65);
 INSERT INTO `sys_role_menu` VALUES (1498, 8, 71);
 INSERT INTO `sys_role_menu` VALUES (1499, 8, 72);
+INSERT INTO `sys_role_menu` VALUES (1546, 8, 59);
+INSERT INTO `sys_role_menu` VALUES (1547, 8, 93);
+INSERT INTO `sys_role_menu` VALUES (1560, 8, 99);
 INSERT INTO `sys_role_menu` VALUES (1500, 11, 34);
 INSERT INTO `sys_role_menu` VALUES (1501, 11, 35);
 INSERT INTO `sys_role_menu` VALUES (1502, 11, 36);
@@ -1006,6 +1060,13 @@ INSERT INTO `sys_role_menu` VALUES (1533, 6, 73);
 INSERT INTO `sys_role_menu` VALUES (1534, 6, 74);
 INSERT INTO `sys_role_menu` VALUES (1535, 6, 75);
 INSERT INTO `sys_role_menu` VALUES (1536, 6, 76);
+INSERT INTO `sys_role_menu` VALUES (1548, 6, 59);
+INSERT INTO `sys_role_menu` VALUES (1549, 6, 93);
+INSERT INTO `sys_role_menu` VALUES (1555, 6, 94);
+INSERT INTO `sys_role_menu` VALUES (1556, 6, 95);
+INSERT INTO `sys_role_menu` VALUES (1557, 6, 96);
+INSERT INTO `sys_role_menu` VALUES (1558, 6, 97);
+INSERT INTO `sys_role_menu` VALUES (1559, 6, 98);
 INSERT INTO `sys_role_menu` VALUES (1537, 12, 34);
 INSERT INTO `sys_role_menu` VALUES (1538, 12, 35);
 INSERT INTO `sys_role_menu` VALUES (1539, 12, 36);
